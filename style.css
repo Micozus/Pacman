@@ -1,13 +1,14 @@
-/* board 27x29 */
+/* punkty 26x29 */
 
 #board {
   display: grid;
-  width: 270px;
-  height: 290px;
+  width: 280px;
+  height: 310px;
   margin: 0 auto;
   border: 2px solid black;
-  grid-template-columns: repeat(27, 1fr);
-  grid-template-rows: repeat(29, 1fr);
+  background-color: darkblue;
+  grid-template-columns: repeat(28, 1fr);
+  grid-template-rows: repeat(31, 1fr);
 }
 #pacman {
   width: 10px;
@@ -17,4 +18,15 @@
   border-radius: 50%;
   box-sizing: border-box;
   grid-area: 1/1/2/2;
+}
+.wall {
+  width: 10px;
+  height: 10px;
+  background-color: darkcyan;
+}
+.dot {
+  width: 4px;
+  height: 4px;
+  background-color: yellowgreen;
+  margin: 3px;
 }
