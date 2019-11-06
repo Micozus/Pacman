@@ -2,6 +2,8 @@ const boardWidth = 28;
 const boardHeight = 31;
 const pacman = document.getElementById("pacman");
 const board = document.getElementById("board");
+const scoreBoard = document.getElementById("score");
+let score = 0;
 
 const player = {
   id: pacman,
@@ -113,6 +115,8 @@ window.addEventListener("keyup", event => {
       dotElement = document.getElementById(`dot${dot.x}:${dot.y}`);
       dots.splice(index, 1);
       dotElement.parentNode.removeChild(dotElement);
+      score += 100;
+      scoreBoard.innerText = score;
     }
   });
   updatePacman();

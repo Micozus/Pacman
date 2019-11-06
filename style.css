@@ -28,6 +28,11 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background-color: yellowgreen;
+  background-color: #fff;
   margin: 3px;
+}
+#score {
+  width: 280px;
+  margin: 10px auto;
+  text-align: right;
 }
