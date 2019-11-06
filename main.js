@@ -108,5 +108,12 @@ window.addEventListener("keyup", event => {
       player.y = currentPosition.y;
     }
   });
+  dots.forEach((dot, index) => {
+    if (player.x === dot.x && player.y === dot.y) {
+      dotElement = document.getElementById(`dot${dot.x}:${dot.y}`);
+      dots.splice(index, 1);
+      dotElement.parentNode.removeChild(dotElement);
+    }
+  });
   updatePacman();
 });
