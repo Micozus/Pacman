@@ -8,6 +8,11 @@ const blue = document.getElementById("ghostBlue");
 const red = document.getElementById("ghostRed");
 const green = document.getElementById("ghostGreen");
 let score = 0;
+let sprites = new Image();
+sprites.src = "spritemap.png";
+sprites.onload = function() {
+  init();
+};
 
 const player = {
   id: pacman,
@@ -21,207 +26,194 @@ const ghostPink = {
   x: 1,
   y: 1
 };
-const ghostBlue = {
-  id: blue,
-  direction: 2,
-  x: 2,
-  y: 1
-};
-const ghostRed = {
-  id: red,
-  direction: 3,
-  x: 3,
-  y: 1
-};
-const ghostGreen = {
-  id: green,
-  direction: 4,
-  x: 4,
-  y: 1
+
+const canva = document.getElementById("canvas");
+const ctx = canva.getContext("2d");
+const map = {
+  tile: 20,
+  width: 28,
+  height: 31,
+  board: [
+    "############################",
+    "#............##............#",
+    "#.####.#####.##.#####.####.#",
+    "#.####.#####.##.#####.####.#",
+    "#.####.#####.##.#####.####.#",
+    "#..........................#",
+    "#.####.##.########.##.####.#",
+    "#.####.##.########.##.####.#",
+    "#......##....##............#",
+    "######.#####.##.#####.######",
+    "    ##.#####.##.#####.##    ",
+    "    ##.##..........##.##    ",
+    "    ##.##.########.##.##    ",
+    "######.##.########.##.######",
+    "..........########..........",
+    "######.##.########.##.######",
+    "    ##.##.########.##.##    ",
+    "    ##.##.        .##.##    ",
+    "    ##.##.########.##.##    ",
+    "######.##.########.##.######",
+    "#............##............#",
+    "#.####.#####.##.#####.####.#",
+    "#.####.#####.##.#####.####.#",
+    "#...##................##...#",
+    "###.##.##.########.##.##.###",
+    "###.##.##.########.##.##.###",
+    "#......##....##....##......#",
+    "#.##########.##.##########.#",
+    "#.##########.##.##########.#",
+    "#..........................#",
+    "############################"
+  ]
 };
 
-const ghosts = [ghostPink, ghostBlue, ghostRed, ghostGreen];
+canva.width = map.width * map.tile;
+canva.height = map.height * map.tile;
 
-const boardMap = [
-  "############################",
-  "#............##............#",
-  "#.####.#####.##.#####.####.#",
-  "#.####.#####.##.#####.####.#",
-  "#.####.#####.##.#####.####.#",
-  "#..........................#",
-  "#.####.##.########.##.####.#",
-  "#.####.##.########.##.####.#",
-  "#......##....##............#",
-  "######.#####.##.#####.######",
-  "    ##.#####.##.#####.##    ",
-  "    ##.##..........##.##    ",
-  "    ##.##.########.##.##    ",
-  "######.##.########.##.######",
-  "..........########..........",
-  "######.##.########.##.######",
-  "    ##.##.########.##.##    ",
-  "    ##.##.        .##.##    ",
-  "    ##.##.########.##.##    ",
-  "######.##.########.##.######",
-  "#............##............#",
-  "#.####.#####.##.#####.####.#",
-  "#.####.#####.##.#####.####.#",
-  "#...##................##...#",
-  "###.##.##.########.##.##.###",
-  "###.##.##.########.##.##.###",
-  "#......##....##....##......#",
-  "#.##########.##.##########.#",
-  "#.##########.##.##########.#",
-  "#..........................#",
-  "############################"
-];
-
-const allPositions = boardMap.flatMap((row, y) =>
+allPositions = map.board.flatMap((row, y) =>
   row.split("").map((char, x) => ({ x, y, char }))
 );
+walls = allPositions.filter(item => item.char === "#");
+dots = allPositions.filter(item => item.char === ".");
 
-const drawWalls = (x, y) => {
-  const wall = document.createElement("div");
-  wall.classList.add("wall");
-  wall.style.gridArea = `${y + 1}/${x + 1}/${y + 2}/${x + 2}`;
-  board.appendChild(wall);
+class PacmanElement {
+  constructor(id, x, y) {
+    this.id = id;
+    this.x = x;
+    this.y = y;
+    // chase, scatter, frightened
+  }
+  moveAvailable = true;
+  phase = "chase";
+}
+const elements = {
+  player: new PacmanElement(pacman, 13, 17),
+  ghostPink: new PacmanElement(pink, 1, 1),
+  ghosts: [this.ghostPink]
 };
 
-const drawDots = (x, y) => {
-  const dot = document.createElement("div");
-  dot.classList.add("dot");
-  dot.id = `dot${x}:${y}`;
-  dot.style.gridArea = `${y + 1}/${x + 1}/${y + 2}/${x + 2}`;
-  board.appendChild(dot);
+const makeElements = elem => {
+  ctx.strokeStyle = "yellow";
+  ctx.fillStyle = "yellow";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(
+    elem.x * map.tile + map.tile / 2,
+    elem.y * map.tile + map.tile / 2,
+    map.tile / 2,
+    0,
+    2 * Math.PI
+  );
+  ctx.stroke();
 };
 
-const walls = allPositions.filter(item => item.char === "#");
-const dots = allPositions.filter(item => item.char === ".");
+dots.forEach(dot => {
+  ctx.strokeStyle = "yellow";
+  ctx.fillStyle = "yellow";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(
+    dot.x * map.tile + map.tile / 2,
+    dot.y * map.tile + map.tile / 2,
+    map.tile / 5,
+    0,
+    2 * Math.PI
+  );
+  ctx.stroke();
+});
 
-walls.forEach(wall => drawWalls(wall.x, wall.y));
-dots.forEach(dot => drawDots(dot.x, dot.y));
+function init() {
+  window.requestAnimationFrame(step);
+}
 
-const updatePacman = () => {
-  player.id.style.gridArea = `${player.y + 1}/${player.x + 1}/${player.y +
-    2}/${player.x + 2}`;
-};
+window.requestAnimationFrame(step);
 
-const updateGhost = ghostcolor => {
-  ghostcolor.id.style.gridArea = `${ghostcolor.y + 1}/${ghostcolor.x +
-    1}/${ghostcolor.y + 2}/${ghostcolor.x + 2}`;
-};
-
-ghosts.forEach(ghost => updateGhost(ghost));
-
-updatePacman();
+function step() {
+  ctx.clearRect(0, 0, canva.width, canva.height);
+  ctx.drawImage(
+    sprites,
+    48,
+    72,
+    24,
+    24,
+    elements.player.x * map.tile,
+    elements.player.y * map.tile,
+    map.tile,
+    map.tile
+  );
+  ctx.drawImage(
+    sprites,
+    0,
+    72,
+    24,
+    24,
+    elements.player.x * map.tile,
+    elements.player.y * map.tile,
+    map.tile,
+    map.tile
+  );
+  dots.forEach(dot => {
+    ctx.strokeStyle = "yellow";
+    ctx.fillStyle = "yellow";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(
+      dot.x * map.tile + map.tile / 2,
+      dot.y * map.tile + map.tile / 2,
+      map.tile / 5,
+      0,
+      2 * Math.PI
+    );
+    ctx.stroke();
+  });
+  walls.forEach(wall => {
+    ctx.fillStyle = "darkblue";
+    ctx.fillRect(wall.x * map.tile, wall.y * map.tile, map.tile, map.tile);
+  });
+  window.requestAnimationFrame(step);
+}
 
 window.addEventListener("keyup", event => {
   const currentPosition = {
-    x: player.x,
-    y: player.y
+    x: elements.player.x,
+    y: elements.player.y
   };
   if (event.code === "ArrowRight") {
-    player.x = player.x + 1;
-    console.log("R", player.x, player.y);
+    elements.player.x = elements.player.x + 1;
   }
   if (event.code === "ArrowLeft") {
-    player.x = player.x - 1;
-    console.log("L", player.x, player.y);
+    elements.player.x = elements.player.x - 1;
   }
   if (event.code === "ArrowUp") {
-    player.y = player.y - 1;
-    console.log("U", player.x, player.y);
+    elements.player.y = elements.player.y - 1;
   }
   if (event.code === "ArrowDown") {
-    player.y = player.y + 1;
-    console.log("D", player.x, player.y);
+    elements.player.y = elements.player.y + 1;
   }
-  if (player.x < 0 && player.y === 14) {
-    player.x = boardWidth - 1;
+  if (elements.player.x < 0 && elements.player.y === 14) {
+    elements.player.x = elements.boardWidth - 1;
   }
-  if (player.x > boardWidth - 1 && player.y === 14) {
-    player.x = 0;
+  if (elements.player.x > boardWidth - 1 && element.player.y === 14) {
+    elements.player.x = 0;
   }
-  if (player.x < 0 || player.x > boardWidth - 1) {
-    player.x = currentPosition.x;
+  if (elements.player.x < 0 || elements.player.x > boardWidth - 1) {
+    elements.player.x = currentPosition.x;
   }
-  if (player.y < 0 || player.y > boardHeight - 1) {
-    player.y = currentPosition.y;
+  if (elements.player.y < 0 || elements.player.y > boardHeight - 1) {
+    elements.player.y = currentPosition.y;
   }
   walls.forEach(wall => {
-    if (player.x === wall.x && player.y === wall.y) {
-      player.x = currentPosition.x;
-      player.y = currentPosition.y;
+    if (elements.player.x === wall.x && elements.player.y === wall.y) {
+      elements.player.x = currentPosition.x;
+      elements.player.y = currentPosition.y;
     }
-  });
-  ghosts.forEach(ghost => {
-    const currentGhostPosition = {
-      x: ghost.x,
-      y: ghost.y,
-      direction: ghost.direction
-    };
-
-    switch (ghost.direction) {
-      case 1: //up
-        ghost.y--;
-        console.log(`${ghost.y} u`);
-        walls.forEach(wall => {
-          if (ghost.x === wall.x && ghost.y === wall.y) {
-            ghost.x = currentGhostPosition.x;
-            ghost.y = currentGhostPosition.y;
-            pacman.x > ghost.x ? (ghost.direction = 3) : (ghost.direction = 4);
-          }
-        });
-        break;
-      case 2: //down
-        ghost.y++;
-        console.log(`${ghost.y} d`);
-        walls.forEach(wall => {
-          if (ghost.x === wall.x && ghost.y === wall.y) {
-            ghost.x = currentGhostPosition.x;
-            ghost.y = currentGhostPosition.y;
-            pacman.x > ghost.x ? (ghost.direction = 3) : (ghost.direction = 4);
-          }
-        });
-        break;
-      case 3: //left
-        ghost.x--;
-        console.log(`${ghost.x} l`);
-        walls.forEach(wall => {
-          if (ghost.x === wall.x && ghost.y === wall.y) {
-            ghost.x = currentGhostPosition.x;
-            ghost.y = currentGhostPosition.y;
-            pacman.y < ghost.y ? (ghost.direction = 1) : (ghost.direction = 2);
-          }
-        });
-        break;
-      case 4: //right
-        ghost.x++;
-        console.log(`${ghost.x} R`);
-        walls.forEach(wall => {
-          if (ghost.x === wall.x && ghost.y === wall.y) {
-            ghost.x = currentGhostPosition.x;
-            ghost.y = currentGhostPosition.y;
-            pacman.y < ghost.y ? (ghost.direction = 1) : (ghost.direction = 2);
-          }
-        });
-        break;
-    }
-    if (player.x === ghost.x && player.y === ghost.y) {
-      player.x = 13;
-      player.y = 17;
-    }
-
-    updateGhost(ghost);
   });
   dots.forEach((dot, index) => {
-    if (player.x === dot.x && player.y === dot.y) {
-      dotElement = document.getElementById(`dot${dot.x}:${dot.y}`);
+    if (elements.player.x === dot.x && elements.player.y === dot.y) {
       dots.splice(index, 1);
-      dotElement.parentNode.removeChild(dotElement);
       score += 100;
       scoreBoard.innerText = score;
     }
   });
-  updatePacman();
 });

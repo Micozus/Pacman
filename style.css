@@ -10,6 +10,12 @@
   grid-template-columns: repeat(28, 1fr);
   grid-template-rows: repeat(31, 1fr);
 }
+#canvas {
+  display: block;
+  margin: 0 auto;
+  background-color: darkcyan;
+  border: 2px solid black;
+}
 #pacman {
   width: 10px;
   height: 10px;
