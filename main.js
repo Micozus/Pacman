@@ -1,30 +1,9 @@
-const boardWidth = 28;
-const boardHeight = 31;
-const pacman = document.getElementById("pacman");
-const board = document.getElementById("board");
 const scoreBoard = document.getElementById("score");
-const pink = document.getElementById("ghostPink");
-const blue = document.getElementById("ghostBlue");
-const red = document.getElementById("ghostRed");
-const green = document.getElementById("ghostGreen");
 let score = 0;
 let sprites = new Image();
 sprites.src = "spritemap.png";
 sprites.onload = function() {
   init();
-};
-
-const player = {
-  id: pacman,
-  x: 13,
-  y: 17
-};
-
-const ghostPink = {
-  id: pink,
-  direction: 1,
-  x: 1,
-  y: 1
 };
 
 const canva = document.getElementById("canvas");
@@ -78,8 +57,7 @@ walls = allPositions.filter(item => item.char === "#");
 dots = allPositions.filter(item => item.char === ".");
 
 class PacmanElement {
-  constructor(id, x, y) {
-    this.id = id;
+  constructor(x, y) {
     this.x = x;
     this.y = y;
     // chase, scatter, frightened
@@ -88,40 +66,10 @@ class PacmanElement {
   phase = "chase";
 }
 const elements = {
-  player: new PacmanElement(pacman, 13, 17),
-  ghostPink: new PacmanElement(pink, 1, 1),
+  player: new PacmanElement(13, 17),
+  ghostPink: new PacmanElement(1, 1),
   ghosts: [this.ghostPink]
 };
-
-const makeElements = elem => {
-  ctx.strokeStyle = "yellow";
-  ctx.fillStyle = "yellow";
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(
-    elem.x * map.tile + map.tile / 2,
-    elem.y * map.tile + map.tile / 2,
-    map.tile / 2,
-    0,
-    2 * Math.PI
-  );
-  ctx.stroke();
-};
-
-dots.forEach(dot => {
-  ctx.strokeStyle = "yellow";
-  ctx.fillStyle = "yellow";
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(
-    dot.x * map.tile + map.tile / 2,
-    dot.y * map.tile + map.tile / 2,
-    map.tile / 5,
-    0,
-    2 * Math.PI
-  );
-  ctx.stroke();
-});
 
 function init() {
   window.requestAnimationFrame(step);
@@ -192,15 +140,15 @@ window.addEventListener("keyup", event => {
     elements.player.y = elements.player.y + 1;
   }
   if (elements.player.x < 0 && elements.player.y === 14) {
-    elements.player.x = elements.boardWidth - 1;
+    elements.player.x = map.width - 1;
   }
-  if (elements.player.x > boardWidth - 1 && element.player.y === 14) {
+  if (elements.player.x > map.width - 1 && elements.player.y === 14) {
     elements.player.x = 0;
   }
-  if (elements.player.x < 0 || elements.player.x > boardWidth - 1) {
+  if (elements.player.x < 0 || elements.player.x > map.width - 1) {
     elements.player.x = currentPosition.x;
   }
-  if (elements.player.y < 0 || elements.player.y > boardHeight - 1) {
+  if (elements.player.y < 0 || elements.player.y > map.height - 1) {
     elements.player.y = currentPosition.y;
   }
   walls.forEach(wall => {
