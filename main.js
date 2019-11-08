@@ -1,243 +1,219 @@
+const boardWidth = 28;
+const boardHeight = 31;
 const pacman = document.getElementById("pacman");
 const board = document.getElementById("board");
 const scoreBoard = document.getElementById("score");
-
 const pink = document.getElementById("ghostPink");
-
-/*const blue = document.getElementById("ghostBlue");
+const blue = document.getElementById("ghostBlue");
 const red = document.getElementById("ghostRed");
-const green = document.getElementById("ghostGreen");*/
+const green = document.getElementById("ghostGreen");
+let score = 0;
+let sprites = new Image();
+sprites.src = "spritemap.png";
+sprites.onload = function() {
+  init();
+};
+
+const player = {
+  id: pacman,
+  x: 13,
+  y: 17
+};
+
+const ghostPink = {
+  id: pink,
+  direction: 1,
+  x: 1,
+  y: 1
+};
+
+const canva = document.getElementById("canvas");
+const ctx = canva.getContext("2d");
+const map = {
+  tile: 20,
+  width: 28,
+  height: 31,
+  board: [
+    "############################",
+    "#............##............#",
+    "#.####.#####.##.#####.####.#",
+    "#.####.#####.##.#####.####.#",
+    "#.####.#####.##.#####.####.#",
+    "#..........................#",
+    "#.####.##.########.##.####.#",
+    "#.####.##.########.##.####.#",
+    "#......##....##............#",
+    "######.#####.##.#####.######",
+    "    ##.#####.##.#####.##    ",
+    "    ##.##..........##.##    ",
+    "    ##.##.########.##.##    ",
+    "######.##.########.##.######",
+    "..........########..........",
+    "######.##.########.##.######",
+    "    ##.##.########.##.##    ",
+    "    ##.##.        .##.##    ",
+    "    ##.##.########.##.##    ",
+    "######.##.########.##.######",
+    "#............##............#",
+    "#.####.#####.##.#####.####.#",
+    "#.####.#####.##.#####.####.#",
+    "#...##................##...#",
+    "###.##.##.########.##.##.###",
+    "###.##.##.########.##.##.###",
+    "#......##....##....##......#",
+    "#.##########.##.##########.#",
+    "#.##########.##.##########.#",
+    "#..........................#",
+    "############################"
+  ]
+};
+
+canva.width = map.width * map.tile;
+canva.height = map.height * map.tile;
+
+allPositions = map.board.flatMap((row, y) =>
+  row.split("").map((char, x) => ({ x, y, char }))
+);
+walls = allPositions.filter(item => item.char === "#");
+dots = allPositions.filter(item => item.char === ".");
 
 class PacmanElement {
-    id;
-    x;
-    y;
-    phase = "chase";
+  constructor(id, x, y) {
+    this.id = id;
+    this.x = x;
+    this.y = y;
     // chase, scatter, frightened
-    moveAvailable = true;
-
-    constructor(id, x, y) {
-        this.id = id;
-        this.x = x;
-        this.y = y;
-    }
-
-    updateElemGridPosition() {
-        this.id.style.gridArea = `${this.y + 1}/${this.x + 1}/${this.y + 2}/${this.x + 2}`;
-        this.moveAvailable = true;
-    };
-
-    elemAnimation(translateDirection, keyframesStyle) {
-        this.id.animate(this.elemAnimationData(translateDirection, keyframesStyle), {
-            direction: 'normal',
-            easing: 'ease-in',
-            duration: 190,
-            iterations: 1
-        });
-    };
-
-    elemAnimationData(translateDirection, keyframesStyle) {
-        return [{transform: `${translateDirection}(0px)`},
-            {transform: `${translateDirection}(${keyframesStyle})`}]
-    };
-
-    updateElem(direction) {
-        if (direction === undefined) {
-            this.updateElemGridPosition();
-        } else {
-            switch (direction) {
-                case "L":
-                    this.elemAnimation('translateX', '-10px');
-                    break;
-                case "R":
-                    this.elemAnimation('translateX', '10px');
-                    break;
-                case "U":
-                    this.elemAnimation('translateY', '-10px');
-                    break;
-                case "D":
-                    this.elemAnimation('translateY', '10px');
-                    break;
-            }
-            this.moveAvailable = false;
-            setTimeout(() => this.updateElemGridPosition(), 195);
-            this.eatDot();
-        }
-    };
-
-    pickViablePath() {
-        const elemCurrentPosition = {
-            x: this.x,
-            y: this.y
-        };
-        const basicPaths = [
-            // Right
-            {
-                x: elemCurrentPosition.x + 1,
-                y: elemCurrentPosition.y,
-                direction: "ArrowRight"
-            },
-            // Left
-            {
-                x: elemCurrentPosition.x - 1,
-                y: elemCurrentPosition.y,
-                direction: "ArrowLeft"
-            },
-            // Up
-            {
-                x: elemCurrentPosition.x,
-                y: elemCurrentPosition.y - 1,
-                direction: "ArrowUp"
-            },
-            // Down
-            {
-                x: elemCurrentPosition.x,
-                y: elemCurrentPosition.y + 1,
-                direction: "ArrowDown"
-            }
-        ];
-        return basicPaths.filter(path => {
-            return (game.walls.find(wall => wall.x === path.x &&
-                wall.y === path.y) === undefined) &&
-                !(path.x < 0 || path.x > game.boardWidth - 1)
-        });
-    };
-
-    pickPlayerDirection(event) {
-        if (this.pickViablePath().find(path => path.direction === event.code)) {
-            switch (event.code) {
-                case "ArrowRight":
-                    this.x = this.x + 1;
-                    return "R";
-                case "ArrowLeft":
-                    this.x = this.x - 1;
-                    return "L";
-                case "ArrowUp":
-                    this.y = this.y - 1;
-                    return "U";
-                case "ArrowDown":
-                    this.y = this.y + 1;
-                    return "D";
-            }
-        }
-    };
-
-    pickGhostPath() {
-        const playerCurrentPosition = {
-            x: game.player.x,
-            y: game.player.y
-        };
-        const viablePaths = this.pickViablePath();
-
-    };
-
-    eatDot() {
-        if (this.id === pacman) {
-            game.dots.forEach((dot, index) => {
-                let dotElement;
-                if (this.x === dot.x && this.y === dot.y) {
-                    dotElement = document.getElementById(`dot${dot.x}:${dot.y}`);
-                    game.dots.splice(index, 1);
-                    dotElement.parentNode.removeChild(dotElement);
-                    game.score += 100;
-                    scoreBoard.innerText = game.score;
-                }
-            });
-        }
-    };
-
+  }
+  moveAvailable = true;
+  phase = "chase";
 }
-
-class PacmanGame {
-    boardWidth = 28;
-    boardMap = [
-        "############################",
-        "#............##............#",
-        "#.####.#####.##.#####.####.#",
-        "#.####.#####.##.#####.####.#",
-        "#.####.#####.##.#####.####.#",
-        "#..........................#",
-        "#.####.##.########.##.####.#",
-        "#.####.##.########.##.####.#",
-        "#......##....##............#",
-        "######.#####.##.#####.######",
-        "    ##.#####.##.#####.##    ",
-        "    ##.##..........##.##    ",
-        "    ##.##.########.##.##    ",
-        "######.##.########.##.######",
-        "..........########..........",
-        "######.##.########.##.######",
-        "    ##.##.########.##.##    ",
-        "    ##.##.        .##.##    ",
-        "    ##.##.########.##.##    ",
-        "######.##.########.##.######",
-        "#............##............#",
-        "#.####.#####.##.#####.####.#",
-        "#.####.#####.##.#####.####.#",
-        "#...##................##...#",
-        "###.##.##.########.##.##.###",
-        "###.##.##.########.##.##.###",
-        "#......##....##....##......#",
-        "#.##########.##.##########.#",
-        "#.##########.##.##########.#",
-        "#..........................#",
-        "############################"
-    ];
-    score = 0;
-    allPositions = this.boardMap.flatMap((row, y) => row.split("").map((char, x) => ({x, y, char})));
-    walls = this.allPositions.filter(item => item.char === "#");
-    dots = this.allPositions.filter(item => item.char === ".");
-    player = new PacmanElement(pacman, 13, 17);
-    ghostPink = new PacmanElement(pink, 1, 1);
-    ghosts = [this.ghostPink];
-
-    pacmanInit() {
-        const drawWalls = (x, y) => {
-            const wall = document.createElement("div");
-            wall.classList.add("wall");
-            wall.style.gridArea = `${y + 1}/${x + 1}/${y + 2}/${x + 2}`;
-            board.appendChild(wall);
-        };
-
-        const drawDots = (x, y) => {
-            const dot = document.createElement("div");
-            dot.classList.add("dot");
-            dot.id = `dot${x}:${y}`;
-            dot.style.gridArea = `${y + 1}/${x + 1}/${y + 2}/${x + 2}`;
-            board.appendChild(dot);
-        };
-        this.walls.forEach(wall => drawWalls(wall.x, wall.y));
-        this.dots.forEach(dot => drawDots(dot.x, dot.y));
-        this.player.updateElem();
-        this.ghosts.forEach(ghost => ghost.updateElem());
-    };
-
-}
-
-const game = new PacmanGame();
-game.pacmanInit();
-
-
-/*const ghostBlue = {
-    id: blue,
-    x: 2,
-    y: 1
+const elements = {
+  player: new PacmanElement(pacman, 13, 17),
+  ghostPink: new PacmanElement(pink, 1, 1),
+  ghosts: [this.ghostPink]
 };
-const ghostRed = {
-    id: red,
-    x: 3,
-    y: 1
+
+const makeElements = elem => {
+  ctx.strokeStyle = "yellow";
+  ctx.fillStyle = "yellow";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(
+    elem.x * map.tile + map.tile / 2,
+    elem.y * map.tile + map.tile / 2,
+    map.tile / 2,
+    0,
+    2 * Math.PI
+  );
+  ctx.stroke();
 };
-const ghostGreen = {
-    id: green,
-    x: 4,
-    y: 1
-};*/
 
-
-window.addEventListener("keydown", event => {
-    if (game.player.moveAvailable) {
-        game.player.updateElem(game.player.pickPlayerDirection(event));
-    }
+dots.forEach(dot => {
+  ctx.strokeStyle = "yellow";
+  ctx.fillStyle = "yellow";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(
+    dot.x * map.tile + map.tile / 2,
+    dot.y * map.tile + map.tile / 2,
+    map.tile / 5,
+    0,
+    2 * Math.PI
+  );
+  ctx.stroke();
 });
 
+function init() {
+  window.requestAnimationFrame(step);
+}
+
+window.requestAnimationFrame(step);
+
+function step() {
+  ctx.clearRect(0, 0, canva.width, canva.height);
+  ctx.drawImage(
+    sprites,
+    48,
+    72,
+    24,
+    24,
+    elements.player.x * map.tile,
+    elements.player.y * map.tile,
+    map.tile,
+    map.tile
+  );
+  ctx.drawImage(
+    sprites,
+    0,
+    72,
+    24,
+    24,
+    elements.player.x * map.tile,
+    elements.player.y * map.tile,
+    map.tile,
+    map.tile
+  );
+  dots.forEach(dot => {
+    ctx.strokeStyle = "yellow";
+    ctx.fillStyle = "yellow";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(
+      dot.x * map.tile + map.tile / 2,
+      dot.y * map.tile + map.tile / 2,
+      map.tile / 5,
+      0,
+      2 * Math.PI
+    );
+    ctx.stroke();
+  });
+  walls.forEach(wall => {
+    ctx.fillStyle = "darkblue";
+    ctx.fillRect(wall.x * map.tile, wall.y * map.tile, map.tile, map.tile);
+  });
+  window.requestAnimationFrame(step);
+}
+
+window.addEventListener("keyup", event => {
+  const currentPosition = {
+    x: elements.player.x,
+    y: elements.player.y
+  };
+  if (event.code === "ArrowRight") {
+    elements.player.x = elements.player.x + 1;
+  }
+  if (event.code === "ArrowLeft") {
+    elements.player.x = elements.player.x - 1;
+  }
+  if (event.code === "ArrowUp") {
+    elements.player.y = elements.player.y - 1;
+  }
+  if (event.code === "ArrowDown") {
+    elements.player.y = elements.player.y + 1;
+  }
+  if (elements.player.x < 0 && elements.player.y === 14) {
+    elements.player.x = elements.boardWidth - 1;
+  }
+  if (elements.player.x > boardWidth - 1 && element.player.y === 14) {
+    elements.player.x = 0;
+  }
+  if (elements.player.x < 0 || elements.player.x > boardWidth - 1) {
+    elements.player.x = currentPosition.x;
+  }
+  if (elements.player.y < 0 || elements.player.y > boardHeight - 1) {
+    elements.player.y = currentPosition.y;
+  }
+  walls.forEach(wall => {
+    if (elements.player.x === wall.x && elements.player.y === wall.y) {
+      elements.player.x = currentPosition.x;
+      elements.player.y = currentPosition.y;
+    }
+  });
+  dots.forEach((dot, index) => {
+    if (elements.player.x === dot.x && elements.player.y === dot.y) {
+      dots.splice(index, 1);
+      score += 100;
+      scoreBoard.innerText = score;
+    }
+  });
+});

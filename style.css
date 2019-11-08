@@ -1,73 +1,80 @@
 /* punkty 26x29 */
 
 #board {
-    display: grid;
-    width: 280px;
-    height: 310px;
-    margin: 0 auto;
-    border: 2px solid black;
-    background-color: darkblue;
-    grid-template-columns: repeat(28, 1fr);
-    grid-template-rows: repeat(31, 1fr);
+  display: grid;
+  width: 280px;
+  height: 310px;
+  margin: 0 auto;
+  border: 2px solid black;
+  background-color: darkblue;
+  grid-template-columns: repeat(28, 1fr);
+  grid-template-rows: repeat(31, 1fr);
 }
-
+#canvas {
+  display: block;
+  margin: 0 auto;
+  background-color: darkcyan;
+  border: 2px solid black;
+}
 #pacman {
-    width: 10px;
-    height: 10px;
-    border: 1px solid black;
-    background-color: yellow;
-    border-radius: 50%;
-    box-sizing: border-box;
-    grid-area: 1/1/2/2;
+  width: 10px;
+  height: 10px;
+  border: 1px solid black;
+  background-color: yellow;
+  border-radius: 50%;
+  box-sizing: border-box;
+  grid-area: 1/1/2/2;
 }
-
-#ghostBlue, #ghostGreen, #ghostRed, #ghostPink {
-    width: 10px;
-    height: 10px;
-    border: 1px solid black;
-    border-radius: 50%;
-    box-sizing: border-box;
-
-    grid-area: 1/1/2/2;
-}
-
 #ghostPink {
-    background-color: #f0f;
-
+  width: 10px;
+  height: 10px;
+  border: 1px solid black;
+  background-color: #f0f;
+  border-radius: 50%;
+  box-sizing: border-box;
+  grid-area: 1/1/2/2;
 }
-
 #ghostBlue {
-    background-color: #00f;
-
+  width: 10px;
+  height: 10px;
+  border: 1px solid black;
+  background-color: #00f;
+  border-radius: 50%;
+  box-sizing: border-box;
+  grid-area: 1/1/2/2;
 }
-
 #ghostRed {
-    background-color: #f00;
-
+  width: 10px;
+  height: 10px;
+  border: 1px solid black;
+  background-color: #f00;
+  border-radius: 50%;
+  box-sizing: border-box;
+  grid-area: 1/1/2/2;
 }
-
 #ghostGreen {
-    background-color: #0f0;
-
+  width: 10px;
+  height: 10px;
+  border: 1px solid black;
+  background-color: #0f0;
+  border-radius: 50%;
+  box-sizing: border-box;
+  grid-area: 1/1/2/2;
 }
-
 .wall {
-    width: 10px;
-    height: 10px;
-    background-color: darkcyan;
+  width: 10px;
+  height: 10px;
+  background-color: darkcyan;
 }
-
 .dot {
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background-color: #fff;
-    margin: 3px;
-    z-index: 2;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #fff;
+  margin: 3px;
 }
-
 #score {
-    width: 280px;
-    margin: 10px auto;
-    text-align: right;
+  width: 280px;
+  margin: 10px auto;
+  text-align: right;
 }
