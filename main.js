@@ -1,227 +1,243 @@
-const boardWidth = 28;
-const boardHeight = 31;
 const pacman = document.getElementById("pacman");
 const board = document.getElementById("board");
 const scoreBoard = document.getElementById("score");
+
 const pink = document.getElementById("ghostPink");
-const blue = document.getElementById("ghostBlue");
+
+/*const blue = document.getElementById("ghostBlue");
 const red = document.getElementById("ghostRed");
-const green = document.getElementById("ghostGreen");
-let score = 0;
+const green = document.getElementById("ghostGreen");*/
 
-const player = {
-  id: pacman,
-  x: 13,
-  y: 17
-};
+class PacmanElement {
+    id;
+    x;
+    y;
+    phase = "chase";
+    // chase, scatter, frightened
+    moveAvailable = true;
 
-const ghostPink = {
-  id: pink,
-  direction: 1,
-  x: 1,
-  y: 1
-};
-const ghostBlue = {
-  id: blue,
-  direction: 2,
-  x: 2,
-  y: 1
-};
-const ghostRed = {
-  id: red,
-  direction: 3,
-  x: 3,
-  y: 1
-};
-const ghostGreen = {
-  id: green,
-  direction: 4,
-  x: 4,
-  y: 1
-};
-
-const ghosts = [ghostPink, ghostBlue, ghostRed, ghostGreen];
-
-const boardMap = [
-  "############################",
-  "#............##............#",
-  "#.####.#####.##.#####.####.#",
-  "#.####.#####.##.#####.####.#",
-  "#.####.#####.##.#####.####.#",
-  "#..........................#",
-  "#.####.##.########.##.####.#",
-  "#.####.##.########.##.####.#",
-  "#......##....##............#",
-  "######.#####.##.#####.######",
-  "    ##.#####.##.#####.##    ",
-  "    ##.##..........##.##    ",
-  "    ##.##.########.##.##    ",
-  "######.##.########.##.######",
-  "..........########..........",
-  "######.##.########.##.######",
-  "    ##.##.########.##.##    ",
-  "    ##.##.        .##.##    ",
-  "    ##.##.########.##.##    ",
-  "######.##.########.##.######",
-  "#............##............#",
-  "#.####.#####.##.#####.####.#",
-  "#.####.#####.##.#####.####.#",
-  "#...##................##...#",
-  "###.##.##.########.##.##.###",
-  "###.##.##.########.##.##.###",
-  "#......##....##....##......#",
-  "#.##########.##.##########.#",
-  "#.##########.##.##########.#",
-  "#..........................#",
-  "############################"
-];
-
-const allPositions = boardMap.flatMap((row, y) =>
-  row.split("").map((char, x) => ({ x, y, char }))
-);
-
-const drawWalls = (x, y) => {
-  const wall = document.createElement("div");
-  wall.classList.add("wall");
-  wall.style.gridArea = `${y + 1}/${x + 1}/${y + 2}/${x + 2}`;
-  board.appendChild(wall);
-};
-
-const drawDots = (x, y) => {
-  const dot = document.createElement("div");
-  dot.classList.add("dot");
-  dot.id = `dot${x}:${y}`;
-  dot.style.gridArea = `${y + 1}/${x + 1}/${y + 2}/${x + 2}`;
-  board.appendChild(dot);
-};
-
-const walls = allPositions.filter(item => item.char === "#");
-const dots = allPositions.filter(item => item.char === ".");
-
-walls.forEach(wall => drawWalls(wall.x, wall.y));
-dots.forEach(dot => drawDots(dot.x, dot.y));
-
-const updatePacman = () => {
-  player.id.style.gridArea = `${player.y + 1}/${player.x + 1}/${player.y +
-    2}/${player.x + 2}`;
-};
-
-const updateGhost = ghostcolor => {
-  ghostcolor.id.style.gridArea = `${ghostcolor.y + 1}/${ghostcolor.x +
-    1}/${ghostcolor.y + 2}/${ghostcolor.x + 2}`;
-};
-
-ghosts.forEach(ghost => updateGhost(ghost));
-
-updatePacman();
-
-window.addEventListener("keyup", event => {
-  const currentPosition = {
-    x: player.x,
-    y: player.y
-  };
-  if (event.code === "ArrowRight") {
-    player.x = player.x + 1;
-    console.log("R", player.x, player.y);
-  }
-  if (event.code === "ArrowLeft") {
-    player.x = player.x - 1;
-    console.log("L", player.x, player.y);
-  }
-  if (event.code === "ArrowUp") {
-    player.y = player.y - 1;
-    console.log("U", player.x, player.y);
-  }
-  if (event.code === "ArrowDown") {
-    player.y = player.y + 1;
-    console.log("D", player.x, player.y);
-  }
-  if (player.x < 0 && player.y === 14) {
-    player.x = boardWidth - 1;
-  }
-  if (player.x > boardWidth - 1 && player.y === 14) {
-    player.x = 0;
-  }
-  if (player.x < 0 || player.x > boardWidth - 1) {
-    player.x = currentPosition.x;
-  }
-  if (player.y < 0 || player.y > boardHeight - 1) {
-    player.y = currentPosition.y;
-  }
-  walls.forEach(wall => {
-    if (player.x === wall.x && player.y === wall.y) {
-      player.x = currentPosition.x;
-      player.y = currentPosition.y;
+    constructor(id, x, y) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
     }
-  });
-  ghosts.forEach(ghost => {
-    const currentGhostPosition = {
-      x: ghost.x,
-      y: ghost.y,
-      direction: ghost.direction
+
+    updateElemGridPosition() {
+        this.id.style.gridArea = `${this.y + 1}/${this.x + 1}/${this.y + 2}/${this.x + 2}`;
+        this.moveAvailable = true;
     };
 
-    switch (ghost.direction) {
-      case 1: //up
-        ghost.y--;
-        console.log(`${ghost.y} u`);
-        walls.forEach(wall => {
-          if (ghost.x === wall.x && ghost.y === wall.y) {
-            ghost.x = currentGhostPosition.x;
-            ghost.y = currentGhostPosition.y;
-            pacman.x > ghost.x ? (ghost.direction = 3) : (ghost.direction = 4);
-          }
+    elemAnimation(translateDirection, keyframesStyle) {
+        this.id.animate(this.elemAnimationData(translateDirection, keyframesStyle), {
+            direction: 'normal',
+            easing: 'ease-in',
+            duration: 190,
+            iterations: 1
         });
-        break;
-      case 2: //down
-        ghost.y++;
-        console.log(`${ghost.y} d`);
-        walls.forEach(wall => {
-          if (ghost.x === wall.x && ghost.y === wall.y) {
-            ghost.x = currentGhostPosition.x;
-            ghost.y = currentGhostPosition.y;
-            pacman.x > ghost.x ? (ghost.direction = 3) : (ghost.direction = 4);
-          }
-        });
-        break;
-      case 3: //left
-        ghost.x--;
-        console.log(`${ghost.x} l`);
-        walls.forEach(wall => {
-          if (ghost.x === wall.x && ghost.y === wall.y) {
-            ghost.x = currentGhostPosition.x;
-            ghost.y = currentGhostPosition.y;
-            pacman.y < ghost.y ? (ghost.direction = 1) : (ghost.direction = 2);
-          }
-        });
-        break;
-      case 4: //right
-        ghost.x++;
-        console.log(`${ghost.x} R`);
-        walls.forEach(wall => {
-          if (ghost.x === wall.x && ghost.y === wall.y) {
-            ghost.x = currentGhostPosition.x;
-            ghost.y = currentGhostPosition.y;
-            pacman.y < ghost.y ? (ghost.direction = 1) : (ghost.direction = 2);
-          }
-        });
-        break;
-    }
-    if (player.x === ghost.x && player.y === ghost.y) {
-      player.x = 13;
-      player.y = 17;
-    }
+    };
 
-    updateGhost(ghost);
-  });
-  dots.forEach((dot, index) => {
-    if (player.x === dot.x && player.y === dot.y) {
-      dotElement = document.getElementById(`dot${dot.x}:${dot.y}`);
-      dots.splice(index, 1);
-      dotElement.parentNode.removeChild(dotElement);
-      score += 100;
-      scoreBoard.innerText = score;
+    elemAnimationData(translateDirection, keyframesStyle) {
+        return [{transform: `${translateDirection}(0px)`},
+            {transform: `${translateDirection}(${keyframesStyle})`}]
+    };
+
+    updateElem(direction) {
+        if (direction === undefined) {
+            this.updateElemGridPosition();
+        } else {
+            switch (direction) {
+                case "L":
+                    this.elemAnimation('translateX', '-10px');
+                    break;
+                case "R":
+                    this.elemAnimation('translateX', '10px');
+                    break;
+                case "U":
+                    this.elemAnimation('translateY', '-10px');
+                    break;
+                case "D":
+                    this.elemAnimation('translateY', '10px');
+                    break;
+            }
+            this.moveAvailable = false;
+            setTimeout(() => this.updateElemGridPosition(), 195);
+            this.eatDot();
+        }
+    };
+
+    pickViablePath() {
+        const elemCurrentPosition = {
+            x: this.x,
+            y: this.y
+        };
+        const basicPaths = [
+            // Right
+            {
+                x: elemCurrentPosition.x + 1,
+                y: elemCurrentPosition.y,
+                direction: "ArrowRight"
+            },
+            // Left
+            {
+                x: elemCurrentPosition.x - 1,
+                y: elemCurrentPosition.y,
+                direction: "ArrowLeft"
+            },
+            // Up
+            {
+                x: elemCurrentPosition.x,
+                y: elemCurrentPosition.y - 1,
+                direction: "ArrowUp"
+            },
+            // Down
+            {
+                x: elemCurrentPosition.x,
+                y: elemCurrentPosition.y + 1,
+                direction: "ArrowDown"
+            }
+        ];
+        return basicPaths.filter(path => {
+            return (game.walls.find(wall => wall.x === path.x &&
+                wall.y === path.y) === undefined) &&
+                !(path.x < 0 || path.x > game.boardWidth - 1)
+        });
+    };
+
+    pickPlayerDirection(event) {
+        if (this.pickViablePath().find(path => path.direction === event.code)) {
+            switch (event.code) {
+                case "ArrowRight":
+                    this.x = this.x + 1;
+                    return "R";
+                case "ArrowLeft":
+                    this.x = this.x - 1;
+                    return "L";
+                case "ArrowUp":
+                    this.y = this.y - 1;
+                    return "U";
+                case "ArrowDown":
+                    this.y = this.y + 1;
+                    return "D";
+            }
+        }
+    };
+
+    pickGhostPath() {
+        const playerCurrentPosition = {
+            x: game.player.x,
+            y: game.player.y
+        };
+        const viablePaths = this.pickViablePath();
+
+    };
+
+    eatDot() {
+        if (this.id === pacman) {
+            game.dots.forEach((dot, index) => {
+                let dotElement;
+                if (this.x === dot.x && this.y === dot.y) {
+                    dotElement = document.getElementById(`dot${dot.x}:${dot.y}`);
+                    game.dots.splice(index, 1);
+                    dotElement.parentNode.removeChild(dotElement);
+                    game.score += 100;
+                    scoreBoard.innerText = game.score;
+                }
+            });
+        }
+    };
+
+}
+
+class PacmanGame {
+    boardWidth = 28;
+    boardMap = [
+        "############################",
+        "#............##............#",
+        "#.####.#####.##.#####.####.#",
+        "#.####.#####.##.#####.####.#",
+        "#.####.#####.##.#####.####.#",
+        "#..........................#",
+        "#.####.##.########.##.####.#",
+        "#.####.##.########.##.####.#",
+        "#......##....##............#",
+        "######.#####.##.#####.######",
+        "    ##.#####.##.#####.##    ",
+        "    ##.##..........##.##    ",
+        "    ##.##.########.##.##    ",
+        "######.##.########.##.######",
+        "..........########..........",
+        "######.##.########.##.######",
+        "    ##.##.########.##.##    ",
+        "    ##.##.        .##.##    ",
+        "    ##.##.########.##.##    ",
+        "######.##.########.##.######",
+        "#............##............#",
+        "#.####.#####.##.#####.####.#",
+        "#.####.#####.##.#####.####.#",
+        "#...##................##...#",
+        "###.##.##.########.##.##.###",
+        "###.##.##.########.##.##.###",
+        "#......##....##....##......#",
+        "#.##########.##.##########.#",
+        "#.##########.##.##########.#",
+        "#..........................#",
+        "############################"
+    ];
+    score = 0;
+    allPositions = this.boardMap.flatMap((row, y) => row.split("").map((char, x) => ({x, y, char})));
+    walls = this.allPositions.filter(item => item.char === "#");
+    dots = this.allPositions.filter(item => item.char === ".");
+    player = new PacmanElement(pacman, 13, 17);
+    ghostPink = new PacmanElement(pink, 1, 1);
+    ghosts = [this.ghostPink];
+
+    pacmanInit() {
+        const drawWalls = (x, y) => {
+            const wall = document.createElement("div");
+            wall.classList.add("wall");
+            wall.style.gridArea = `${y + 1}/${x + 1}/${y + 2}/${x + 2}`;
+            board.appendChild(wall);
+        };
+
+        const drawDots = (x, y) => {
+            const dot = document.createElement("div");
+            dot.classList.add("dot");
+            dot.id = `dot${x}:${y}`;
+            dot.style.gridArea = `${y + 1}/${x + 1}/${y + 2}/${x + 2}`;
+            board.appendChild(dot);
+        };
+        this.walls.forEach(wall => drawWalls(wall.x, wall.y));
+        this.dots.forEach(dot => drawDots(dot.x, dot.y));
+        this.player.updateElem();
+        this.ghosts.forEach(ghost => ghost.updateElem());
+    };
+
+}
+
+const game = new PacmanGame();
+game.pacmanInit();
+
+
+/*const ghostBlue = {
+    id: blue,
+    x: 2,
+    y: 1
+};
+const ghostRed = {
+    id: red,
+    x: 3,
+    y: 1
+};
+const ghostGreen = {
+    id: green,
+    x: 4,
+    y: 1
+};*/
+
+
+window.addEventListener("keydown", event => {
+    if (game.player.moveAvailable) {
+        game.player.updateElem(game.player.pickPlayerDirection(event));
     }
-  });
-  updatePacman();
 });
+
