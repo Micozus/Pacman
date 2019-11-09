@@ -1,9 +1,11 @@
 const scoreBoard = document.getElementById("score");
 let score = 0;
+
+// sprite tile 24x24
 let sprites = new Image();
 sprites.src = "spritemap.png";
-sprites.onload = function() {
-  init();
+sprites.onload = () => {
+  window.requestAnimationFrame(step);
 };
 
 const canva = document.getElementById("canvas");
@@ -57,49 +59,47 @@ walls = allPositions.filter(item => item.char === "#");
 dots = allPositions.filter(item => item.char === ".");
 
 class PacmanElement {
-  constructor(x, y) {
+  constructor(x, y, spritex, spritey) {
     this.x = x;
     this.y = y;
+    this.spritex = spritex;
+    this.spritey = spritey;
     // chase, scatter, frightened
   }
   moveAvailable = true;
   phase = "chase";
 }
+
 const elements = {
-  player: new PacmanElement(13, 17),
-  ghostPink: new PacmanElement(1, 1),
-  ghosts: [this.ghostPink]
+  player: new PacmanElement(13, 17, 48, 72),
+  ghostPink: new PacmanElement(1, 1, 0, 192),
+  ghostRed: new PacmanElement(2, 1, 0, 144),
+  ghostOrange: new PacmanElement(3, 1, 0, 216),
+  ghostBlue: new PacmanElement(4, 1, 192, 192)
 };
 
-function init() {
-  window.requestAnimationFrame(step);
-}
+const toDraw = [
+  elements.player,
+  elements.ghostPink,
+  elements.ghostBlue,
+  elements.ghostOrange,
+  elements.ghostRed
+];
 
-window.requestAnimationFrame(step);
-
-function step() {
+const step = () => {
   ctx.clearRect(0, 0, canva.width, canva.height);
-  ctx.drawImage(
-    sprites,
-    48,
-    72,
-    24,
-    24,
-    elements.player.x * map.tile,
-    elements.player.y * map.tile,
-    map.tile,
-    map.tile
-  );
-  ctx.drawImage(
-    sprites,
-    0,
-    72,
-    24,
-    24,
-    elements.player.x * map.tile,
-    elements.player.y * map.tile,
-    map.tile,
-    map.tile
+  toDraw.forEach(draw =>
+    ctx.drawImage(
+      sprites,
+      draw.spritex,
+      draw.spritey,
+      24,
+      24,
+      draw.x * map.tile,
+      draw.y * map.tile,
+      map.tile,
+      map.tile
+    )
   );
   dots.forEach(dot => {
     ctx.strokeStyle = "yellow";
@@ -120,24 +120,39 @@ function step() {
     ctx.fillRect(wall.x * map.tile, wall.y * map.tile, map.tile, map.tile);
   });
   window.requestAnimationFrame(step);
-}
+};
 
 window.addEventListener("keyup", event => {
+  if (
+    event.code === "ArrowRight" ||
+    event.code === "ArrowLeft" ||
+    event.code === "ArrowUp" ||
+    event.code === "ArrowDown"
+  ) {
+    elements.player.direction = event.code;
+  }
+});
+
+setInterval(() => {
   const currentPosition = {
     x: elements.player.x,
     y: elements.player.y
   };
-  if (event.code === "ArrowRight") {
+  if (elements.player.direction === "ArrowRight") {
     elements.player.x = elements.player.x + 1;
+    elements.player.spritex = 145;
   }
-  if (event.code === "ArrowLeft") {
+  if (elements.player.direction === "ArrowLeft") {
     elements.player.x = elements.player.x - 1;
+    elements.player.spritex = 49;
   }
-  if (event.code === "ArrowUp") {
+  if (elements.player.direction === "ArrowUp") {
     elements.player.y = elements.player.y - 1;
+    elements.player.spritex = 73;
   }
-  if (event.code === "ArrowDown") {
+  if (elements.player.direction === "ArrowDown") {
     elements.player.y = elements.player.y + 1;
+    elements.player.spritex = 169;
   }
   if (elements.player.x < 0 && elements.player.y === 14) {
     elements.player.x = map.width - 1;
@@ -145,18 +160,22 @@ window.addEventListener("keyup", event => {
   if (elements.player.x > map.width - 1 && elements.player.y === 14) {
     elements.player.x = 0;
   }
-  if (elements.player.x < 0 || elements.player.x > map.width - 1) {
-    elements.player.x = currentPosition.x;
-  }
-  if (elements.player.y < 0 || elements.player.y > map.height - 1) {
-    elements.player.y = currentPosition.y;
-  }
   walls.forEach(wall => {
     if (elements.player.x === wall.x && elements.player.y === wall.y) {
       elements.player.x = currentPosition.x;
       elements.player.y = currentPosition.y;
     }
   });
+  if (
+    elements.player.x !== currentPosition.x ||
+    elements.player.y !== currentPosition.y
+  ) {
+    elements.player.moveAvailable = true;
+    elements.player.lastGoodPath = elements.player.direction;
+  } else {
+    elements.player.moveAvailable = false;
+    elements.player.direction = elements.player.lastGoodPath;
+  }
   dots.forEach((dot, index) => {
     if (elements.player.x === dot.x && elements.player.y === dot.y) {
       dots.splice(index, 1);
@@ -164,4 +183,4 @@ window.addEventListener("keyup", event => {
       scoreBoard.innerText = score;
     }
   });
-});
+}, 100);
