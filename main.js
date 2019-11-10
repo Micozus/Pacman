@@ -66,7 +66,7 @@ class PacmanElement {
     this.spritey = spritey;
     // chase, scatter, frightened
   }
-  moveAvailable = true;
+  moveAvailable = false;
   phase = "chase";
 }
 
@@ -77,6 +77,13 @@ const elements = {
   ghostOrange: new PacmanElement(3, 1, 0, 216),
   ghostBlue: new PacmanElement(4, 1, 192, 192)
 };
+
+const ghosts = [
+  elements.ghostPink,
+  elements.ghostRed,
+  elements.ghostOrange,
+  elements.ghostBlue
+];
 
 const toDraw = [
   elements.player,
@@ -134,24 +141,43 @@ window.addEventListener("keyup", event => {
 });
 
 setInterval(() => {
-  const currentPosition = {
-    x: elements.player.x,
-    y: elements.player.y
+  const moving = (typ, direction) => {
+    const currentPosition = {
+      x: typ.x,
+      y: typ.y
+    };
+    if (direction === "ArrowUp") typ.y--;
+    if (direction === "ArrowDown") typ.y++;
+    if (direction === "ArrowLeft") typ.x--;
+    if (direction === "ArrowRight") typ.x++;
+    walls.forEach(wall => {
+      if (typ.x === wall.x && typ.y === wall.y) {
+        typ.x = currentPosition.x;
+        typ.y = currentPosition.y;
+      }
+    });
+    if (typ.x !== currentPosition.x || typ.y !== currentPosition.y) {
+      typ.moveAvailable = true;
+      typ.lastGoodPath = typ.direction;
+    } else {
+      typ.moveAvailable = false;
+      typ.direction = typ.lastGoodPath;
+    }
   };
   if (elements.player.direction === "ArrowRight") {
-    elements.player.x = elements.player.x + 1;
+    moving(elements.player, "ArrowRight");
     elements.player.spritex = 145;
   }
   if (elements.player.direction === "ArrowLeft") {
-    elements.player.x = elements.player.x - 1;
+    moving(elements.player, "ArrowLeft");
     elements.player.spritex = 49;
   }
   if (elements.player.direction === "ArrowUp") {
-    elements.player.y = elements.player.y - 1;
+    moving(elements.player, "ArrowUp");
     elements.player.spritex = 73;
   }
   if (elements.player.direction === "ArrowDown") {
-    elements.player.y = elements.player.y + 1;
+    moving(elements.player, "ArrowDown");
     elements.player.spritex = 169;
   }
   if (elements.player.x < 0 && elements.player.y === 14) {
@@ -160,27 +186,35 @@ setInterval(() => {
   if (elements.player.x > map.width - 1 && elements.player.y === 14) {
     elements.player.x = 0;
   }
-  walls.forEach(wall => {
-    if (elements.player.x === wall.x && elements.player.y === wall.y) {
-      elements.player.x = currentPosition.x;
-      elements.player.y = currentPosition.y;
-    }
-  });
-  if (
-    elements.player.x !== currentPosition.x ||
-    elements.player.y !== currentPosition.y
-  ) {
-    elements.player.moveAvailable = true;
-    elements.player.lastGoodPath = elements.player.direction;
-  } else {
-    elements.player.moveAvailable = false;
-    elements.player.direction = elements.player.lastGoodPath;
-  }
   dots.forEach((dot, index) => {
     if (elements.player.x === dot.x && elements.player.y === dot.y) {
       dots.splice(index, 1);
       score += 100;
       scoreBoard.innerText = score;
+    }
+  });
+  ghosts.forEach(ghost => {
+    if (!ghost.moveAvailable) {
+      switch (Math.floor(Math.random() * 4)) {
+        case 0:
+          ghost.direction = "ArrowLeft";
+          break;
+        case 1:
+          ghost.direction = "ArrowRight";
+          break;
+        case 2:
+          ghost.direction = "ArrowUp";
+          break;
+        case 3:
+          ghost.direction = "ArrowDown";
+          break;
+      }
+    }
+    moving(ghost, ghost.direction);
+    if (elements.player.x === ghost.x && elements.player.y === ghost.y) {
+      elements.player.x = 13;
+      elements.player.y = 17;
+      elements.player.direction = null;
     }
   });
 }, 100);
