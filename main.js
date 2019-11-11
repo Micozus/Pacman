@@ -28,35 +28,35 @@ class PacmanGame {
         height: 31,
         board: [
             "############################",
-            "#............##............#",
+            "#X....X.....X##X.....X....X#",
             "#.####.#####.##.#####.####.#",
             "#.####.#####.##.#####.####.#",
             "#.####.#####.##.#####.####.#",
-            "#..........................#",
+            "#X....X..X..X..X.....X....X#",
             "#.####.##.########.##.####.#",
             "#.####.##.########.##.####.#",
-            "#......##....##............#",
+            "#X....X##X..X##X.....X....X#",
             "######.#####.##.#####.######",
             "    ##.#####.##.#####.##    ",
-            "    ##.##..........##.##    ",
+            "    ##.##X..X..X..X##.##    ",
             "    ##.##.########.##.##    ",
             "######.##.########.##.######",
-            "..........########..........",
+            "X.....X..X########X..X.....X",
             "######.##.########.##.######",
             "    ##.##.########.##.##    ",
             "    ##.##.        .##.##    ",
             "    ##.##.########.##.##    ",
             "######.##.########.##.######",
-            "#............##............#",
+            "#X....X..X..X##X..X..X....X#",
             "#.####.#####.##.#####.####.#",
             "#.####.#####.##.#####.####.#",
-            "#...##................##...#",
+            "#X.X##X..X..X..X..X..X##X.X#",
             "###.##.##.########.##.##.###",
             "###.##.##.########.##.##.###",
-            "#......##....##....##......#",
+            "#X.X..X##X..X##X..X##X..X.X#",
             "#.##########.##.##########.#",
             "#.##########.##.##########.#",
-            "#..........................#",
+            "#X..........X..X..........X#",
             "############################"
         ]
     };
@@ -71,7 +71,8 @@ class PacmanGame {
     ghosts = Object.values(this.elements).slice(1);
     allPositions = this.map.board.flatMap((row, y) => row.split("").map((char, x) => ({x, y, char})));
     walls = this.allPositions.filter(item => item.char === "#");
-    dots = this.allPositions.filter(item => item.char === ".");
+    dots = this.allPositions.filter(item => item.char === "." || item.char === "X");
+    crossroads = this.allPositions.filter(item => item.char === "X");
 
     eatDot() {
         this.dots.forEach((dot, index) => {
@@ -113,24 +114,44 @@ class PacmanGame {
         this.eatDot();
     }
 
-    ghostMovement() {
-        this.ghosts.forEach(ghost => {
-            if (!ghost.moveAvailable) {
-                switch (Math.floor(Math.random() * 4)) {
-                    case 0:
-                        ghost.direction = "ArrowLeft";
-                        break;
-                    case 1:
-                        ghost.direction = "ArrowRight";
-                        break;
-                    case 2:
-                        ghost.direction = "ArrowUp";
-                        break;
-                    case 3:
-                        ghost.direction = "ArrowDown";
-                        break;
+    randomiseFromGivenDirections(directions) {
+        return directions[Math.floor(Math.random() * directions.length)];
+    }
+
+    ghostDirectionPick(player, ghost) {
+        this.crossroads.forEach(crossroad => {
+            if (ghost.x === crossroad.x && ghost.y === crossroad.y) {
+                if (player.x > ghost.x && player.y > ghost.y) {
+                    ghost.direction = this.randomiseFromGivenDirections(["ArrowRight", "ArrowDown"]);
+                } else if(player.x > ghost.x && player.y === ghost.y) {
+                    ghost.direction = this.randomiseFromGivenDirections(["ArrowRight"]);
+                } else if(player.x > ghost.x && player.y < ghost.y) {
+
                 }
             }
+        });
+
+        if (!ghost.moveAvailable) {
+            switch (Math.floor(Math.random() * 4)) {
+                case 0:
+                    ghost.direction = "ArrowLeft";
+                    break;
+                case 1:
+                    ghost.direction = "ArrowRight";
+                    break;
+                case 2:
+                    ghost.direction = "ArrowUp";
+                    break;
+                case 3:
+                    ghost.direction = "ArrowDown";
+                    break;
+            }
+        }
+    }
+
+    ghostMovement() {
+        this.ghosts.forEach(ghost => {
+this.ghostDirectionPick(this.elements.player, ghost);
             this.moving(ghost, ghost.direction);
             this.playerReset(ghost);
         });
@@ -218,7 +239,18 @@ class Canvas {
                 ctx.fillStyle = "darkblue";
                 ctx.fillRect(wall.x * game.map.tile, wall.y * game.map.tile, game.map.tile, game.map.tile);
             });
+
+            // // Do usunięcia - służy zaznaczeniu skrzyżowań
+            //
+            // game.crossroads.forEach(crossroad => {
+            //     ctx.fillStyle = "red";
+            //     ctx.fillRect(crossroad.x * game.map.tile, crossroad.y * game.map.tile, game.map.tile, game.map.tile);
+            // });
+            //
+            // // Koniec zaznaczania skrzyżowań
+
             window.requestAnimationFrame(step);
+
         };
         canvas.width = game.map.width * game.map.tile;
         canvas.height = game.map.height * game.map.tile;
