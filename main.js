@@ -114,19 +114,34 @@ class PacmanGame {
         this.eatDot();
     }
 
+    // Wybór kierunku na zasadzie pseudolosowości wyboru, aby duszki nie były bezlitosnymi mordercami i czasami mogły się mylić :)
     randomiseFromGivenDirections(directions) {
         return directions[Math.floor(Math.random() * directions.length)];
     }
 
     ghostDirectionPick(player, ghost) {
         this.crossroads.forEach(crossroad => {
+
+            // Komentarze określają lokalizację Pacmana w stosunku do ducha
             if (ghost.x === crossroad.x && ghost.y === crossroad.y) {
+                // Prawo Dół
                 if (player.x > ghost.x && player.y > ghost.y) {
                     ghost.direction = this.randomiseFromGivenDirections(["ArrowRight", "ArrowDown"]);
-                } else if(player.x > ghost.x && player.y === ghost.y) {
+                    // Prawo
+                } else if (player.x > ghost.x && player.y === ghost.y) {
                     ghost.direction = this.randomiseFromGivenDirections(["ArrowRight"]);
-                } else if(player.x > ghost.x && player.y < ghost.y) {
-
+                    // Prawo Góra
+                } else if (player.x > ghost.x && player.y < ghost.y) {
+                    ghost.direction = this.randomiseFromGivenDirections(["ArrowRight", "ArrowUp"]);
+                    // Lewo Dół
+                } else if (player.x < ghost.x && player.y > ghost.y) {
+                    ghost.direction = this.randomiseFromGivenDirections(["ArrowLeft", "ArrowDown"]);
+                    // Lewo
+                } else if (player.x < ghost.x && player.y === ghost.y) {
+                    ghost.direction = this.randomiseFromGivenDirections(["ArrowLeft"]);
+                    // Lewo Góra
+                } else if (player.x < ghost.x && player.y < ghost.y) {
+                    ghost.direction = this.randomiseFromGivenDirections(["ArrowLeft", "ArrowUp"]);
                 }
             }
         });
@@ -151,7 +166,7 @@ class PacmanGame {
 
     ghostMovement() {
         this.ghosts.forEach(ghost => {
-this.ghostDirectionPick(this.elements.player, ghost);
+            this.ghostDirectionPick(this.elements.player, ghost);
             this.moving(ghost, ghost.direction);
             this.playerReset(ghost);
         });
