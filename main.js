@@ -83,9 +83,10 @@ class PacmanGame {
   walls = this.allPositions.filter(
     item =>
       item.char !== "X" &&
-      item.char !== "D" &&
+      item.char !== "P" &&
       item.char !== "." &&
       item.char !== "#" &&
+      item.char !== "D" &&
       item.char !== "K"
   );
   dots = this.allPositions.filter(
@@ -361,6 +362,7 @@ class PacmanGame {
     ghost.x = 13;
     ghost.y = 11;
     ghost.outside = true;
+    ghost.alive = true;
     this.sortGhostsInHouse();
   }
 
@@ -472,8 +474,10 @@ class PacmanGame {
   pacmanInit() {
     setInterval(() => {
       this.playerMovement();
-      this.ghosts.forEach(ghost => this.ghostMovement(ghost));
     }, 100);
+    setInterval(() => {
+      this.ghosts.forEach(ghost => this.ghostMovement(ghost));
+    }, 125);
   }
 }
 
