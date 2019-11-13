@@ -11,6 +11,8 @@ class PacmanElement {
     movementType = "chase";
     outside;
     direction;
+    alive = true;
+    scared = null;
 
     constructor(x, y, spritex, spritey, outside) {
         this.x = x;
@@ -26,7 +28,9 @@ class PacmanElement {
 
 class PacmanGame {
     level = 1;
+    life = 2;
     spriteTile = 24;
+    ghostResetTile = {x: 13, y: 11};
     map = {
         tile: 20,
         width: 28,
@@ -46,7 +50,7 @@ class PacmanGame {
             "    ##.##X..X..X..X##.##    ",
             "    ##.##.###DD###.##.##    ",
             "######.##.##    ##.##.######",
-            "X.....X..X########X..X.....X",
+            "......X..X########X..X......",
             "######.##.########.##.######",
             "    ##.##.########.##.##    ",
             "    ##.##.        .##.##    ",
@@ -97,7 +101,10 @@ class PacmanGame {
                 this.powerups.splice(index, 1);
                 this.ghosts
                     .filter(ghost => ghost.outside)
-                    .forEach(ghost => this.ghostScaredState(ghost, 10000 - (this.level * 500)));
+                    .forEach(ghost => {
+                        clearTimeout(ghost.scared);
+                        this.ghostScaredState(ghost, 10000 - (this.level * 500));
+                    });
             }
         });
     }
@@ -123,12 +130,7 @@ class PacmanGame {
         }
 
 
-        if (this.elements.player.x < 0 && this.elements.player.y === 14) {
-            this.elements.player.x = this.map.width - 1;
-        }
-        if (this.elements.player.x > this.map.width - 1 && this.elements.player.y === 14) {
-            this.elements.player.x = 0;
-        }
+        this.elemToCrossMapBridge(this.elements.player);
         this.eatDot();
         this.eatPowerup();
     }
@@ -138,9 +140,16 @@ class PacmanGame {
         return directions[Math.floor(Math.random() * directions.length)];
     }
 
-    changeGhostSpriteBasedOnDirection(ghost) {
+    elemToCrossMapBridge(elem) {
+        if (elem.x < 0 && elem.y === 14) {
+            elem.x = this.map.width - 1;
+        }
+        if (elem.x > this.map.width - 1 && elem.y === 14) {
+            elem.x = 0;
+        }
+    }
 
-        // Normalny wygląd duszków
+    changeGhostSpriteBasedOnDirection(ghost) {
         if (ghost.movementType === "chase" || ghost.movementType === "scatter") {
             switch (ghost.direction) {
                 case "ArrowLeft":
@@ -155,49 +164,96 @@ class PacmanGame {
                 case "ArrowRight":
                     ghost.spriteX = ghost.startSpriteX;
                     break;
-
             }
         }
     }
 
-    ghostDirectionPick(player, ghost) {
+    // Algorytm poruszania ducha
+    ghostDirectionAlgorithm(elementToChase, ghost) {
         this.crossroads.forEach(crossroad => {
             // Komentarze określają lokalizację Pacmana w stosunku do ducha
             if (ghost.x === crossroad.x && ghost.y === crossroad.y) {
-                // Prawo Dół
-                if (player.x > ghost.x && player.y > ghost.y) {
-                    ghost.direction = this.randomiseFromGivenDirections(["ArrowRight", "ArrowDown"]);
-                    // Prawo
-                } else if (player.x > ghost.x && player.y === ghost.y) {
-                    ghost.direction = this.randomiseFromGivenDirections(["ArrowRight"]);
-                    // Prawo Góra
-                } else if (player.x > ghost.x && player.y < ghost.y) {
-                    ghost.direction = this.randomiseFromGivenDirections(["ArrowRight", "ArrowUp"]);
-                    // Lewo Dół
-                } else if (player.x < ghost.x && player.y > ghost.y) {
-                    ghost.direction = this.randomiseFromGivenDirections(["ArrowLeft", "ArrowDown"]);
-                    // Lewo
-                } else if (player.x < ghost.x && player.y === ghost.y) {
-                    ghost.direction = this.randomiseFromGivenDirections(["ArrowLeft"]);
-                    // Lewo Góra
-                } else if (player.x < ghost.x && player.y < ghost.y) {
-                    ghost.direction = this.randomiseFromGivenDirections(["ArrowLeft", "ArrowUp"]);
+                // Sprawdzenie czy duch nie zostal zlapany przez Pacmana
+                if (ghost.alive) {
+                    // Prawo Dół
+                    if (elementToChase.x > ghost.x && elementToChase.y > ghost.y) {
+                        // Ruch warunkowany typem poruszania ducha, drugi state to frightened,
+                        // TODO: ew. scatter type
+                        ghost.direction = (ghost.movementType === "chase")
+                            ? this.randomiseFromGivenDirections(["ArrowRight", "ArrowDown"])
+                            : this.randomiseFromGivenDirections(["ArrowLeft", "ArrowUp"]);
+                        // Prawo
+                    } else if (elementToChase.x > ghost.x && elementToChase.y === ghost.y) {
+                        ghost.direction = (ghost.movementType === "chase")
+                            ? this.randomiseFromGivenDirections(["ArrowRight"])
+                            : this.randomiseFromGivenDirections(["ArrowLeft", "ArrowDown", "ArrowUp"]);
+                        // Prawo Góra
+                    } else if (elementToChase.x > ghost.x && elementToChase.y < ghost.y) {
+                        ghost.direction = (ghost.movementType === "chase")
+                            ? this.randomiseFromGivenDirections(["ArrowRight", "ArrowUp"])
+                            : this.randomiseFromGivenDirections(["ArrowLeft", "ArrowDown"]);
+                        // Lewo Dół
+                    } else if (elementToChase.x < ghost.x && elementToChase.y > ghost.y) {
+                        ghost.direction = (ghost.movementType === "chase")
+                            ? this.randomiseFromGivenDirections(["ArrowLeft", "ArrowDown"])
+                            : this.randomiseFromGivenDirections(["ArrowRight", "ArrowUp"]);
+                        // Lewo
+                    } else if (elementToChase.x < ghost.x && elementToChase.y === ghost.y) {
+                        ghost.direction = (ghost.movementType === "chase")
+                            ? this.randomiseFromGivenDirections(["ArrowLeft"])
+                            : this.randomiseFromGivenDirections(["ArrowRight", "ArrowDown", "ArrowUp"]);
+                        // Lewo Góra
+                    } else if (elementToChase.x < ghost.x && elementToChase.y < ghost.y) {
+                        ghost.direction = (ghost.movementType === "chase")
+                            ? this.randomiseFromGivenDirections(["ArrowLeft", "ArrowUp"])
+                            : this.randomiseFromGivenDirections(["ArrowRight", "ArrowDown"]);
+                    }
+                    // Jezeli zostal zlapany przez Pacmana kieruje sie do bramy jako duch
+                } else {
+                    // Prawo Dół
+                    if (elementToChase.x > ghost.x && elementToChase.y > ghost.y) {
+                        ghost.direction = this.randomiseFromGivenDirections(["ArrowRight", "ArrowDown"]);
+                        // Prawo
+                    } else if (elementToChase.x > ghost.x && elementToChase.y === ghost.y) {
+                        ghost.direction = this.randomiseFromGivenDirections(["ArrowRight"]);
+                        // Prawo Góra
+                    } else if (elementToChase.x > ghost.x && elementToChase.y < ghost.y) {
+                        ghost.direction = this.randomiseFromGivenDirections(["ArrowRight", "ArrowUp"]);
+                        // Lewo Dół
+                    } else if (elementToChase.x < ghost.x && elementToChase.y > ghost.y) {
+                        ghost.direction = this.randomiseFromGivenDirections(["ArrowLeft", "ArrowDown"]);
+                        // Lewo
+                    } else if (elementToChase.x < ghost.x && elementToChase.y === ghost.y) {
+                        ghost.direction = this.randomiseFromGivenDirections(["ArrowLeft"]);
+                        // Lewo Góra
+                    } else if (elementToChase.x < ghost.x && elementToChase.y < ghost.y) {
+                        ghost.direction = this.randomiseFromGivenDirections(["ArrowLeft", "ArrowUp"]);
+                    }
                 }
             } else if (!ghost.moveAvailable) {
                 ghost.direction = this.randomiseFromGivenDirections(["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"]);
             }
+
             this.changeGhostSpriteBasedOnDirection(ghost);
         });
     }
 
-    ghostMovement() {
-        this.ghosts.forEach(ghost => {
-            if (ghost.outside) {
-                this.ghostDirectionPick(this.elements.player, ghost);
-                this.moving(ghost, ghost.direction);
-                this.playerReset(ghost);
-            }
-        });
+    ghostMovementTypesPick(ghost) {
+        (!ghost.alive)
+            ? this.ghostDirectionAlgorithm(this.ghostResetTile, ghost)
+            : this.ghostDirectionAlgorithm(this.elements.player, ghost);
+    }
+
+    ghostMovement(ghost) {
+        if (ghost.outside) {
+            this.elemToCrossMapBridge(ghost);
+            (ghost.movementType === "frightened")
+                ? this.ghostReset(ghost)
+                : this.playerReset(ghost);
+            this.ghostMovementTypesPick(ghost);
+            if (!ghost.alive && (ghost.x === this.ghostResetTile.x && ghost.y === this.ghostResetTile.y)) this.deactivateGhost(ghost);
+            this.moving(ghost, ghost.direction);
+        }
     }
 
     playerReset(ghost) {
@@ -205,6 +261,14 @@ class PacmanGame {
             this.elements.player.x = 13;
             this.elements.player.y = 17;
             this.elements.player.direction = null;
+        }
+    }
+
+    ghostReset(ghost) {
+        if (this.elements.player.x === ghost.x && this.elements.player.y === ghost.y) {
+            ghost.alive = false;
+            clearTimeout(ghost.scared);
+            this.setCaughtByPacmanGhostSprite(ghost);
         }
     }
 
@@ -222,36 +286,47 @@ class PacmanGame {
         this.sortGhostsInHouse();
     }
 
+
+    // Powrót ducha do bazowych sprite'ów
     resetGhostSprite(ghost) {
         ghost.spriteX = ghost.startSpriteX;
         ghost.spriteY = ghost.startSpriteY;
     }
 
+    // Ustawianie spritu ducha wskazujac, że jego movement type jest frightened
     setScaredGhostSprite(ghost) {
         ghost.spriteX = this.spriteTile * 9;
         ghost.spriteY = this.spriteTile * 4;
     }
 
+    // Ustawianie spritu ducha na jasny, wskazówka dla gracza, że zaraz zmieni typ movementu
     setScaredFlashingGhostSprite(ghost) {
         ghost.spriteX = this.spriteTile * 7;
         ghost.spriteY = this.spriteTile * 4;
     }
 
+    setCaughtByPacmanGhostSprite(ghost) {
+        ghost.spriteX = this.spriteTile * 9;
+        ghost.spriteY = this.spriteTile * 9;
+    }
+
+    // Logika zmiany typu movementu po powerupie
     ghostScaredState(ghost, time) {
         ghost.movementType = "frightened";
         this.setScaredGhostSprite(ghost);
-        setTimeout(() => this.ghostFlashingSprite(ghost), time);
+        ghost.scared = setTimeout(() => this.ghostFlashingSprite(ghost), time);
     }
 
-
+// Logika flashowania powrotu do poprzedniego movement typu
     ghostFlashingSprite(ghost) {
-        const interval = setInterval(() => {
+        let interval = setInterval(() => {
             this.setScaredGhostSprite(ghost);
             setTimeout(() => this.setScaredFlashingGhostSprite(ghost), 300);
         }, 500);
         setTimeout(() => {
             this.resetGhostSprite(ghost);
             ghost.movementType = "chase";
+            ghost.alive = true;
             clearInterval(interval)
         }, 4000);
     }
@@ -278,6 +353,7 @@ class PacmanGame {
             this.resetGhostSprite(ghost);
             ghost.outside = false;
         }
+        setTimeout(() => this.activateGhost(ghost), 1000);
     }
 
     gameReset() {
@@ -310,14 +386,16 @@ class PacmanGame {
             elem.lastGoodPath = elem.direction;
         } else {
             elem.moveAvailable = false;
-            elem.direction = elem.lastGoodPath;
+            elem.direction = (!elem.alive)
+                ? this.ghostDirectionAlgorithm(this.ghostResetTile, elem)
+                : this.ghostDirectionAlgorithm(this.elements.player, elem);
         }
     };
 
     pacmanInit() {
         setInterval(() => {
             this.playerMovement();
-            this.ghostMovement();
+            this.ghosts.forEach(ghost => this.ghostMovement(ghost));
         }, 100);
     }
 }
