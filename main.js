@@ -8,20 +8,25 @@ const scoreBoard = document.getElementById("score");
 
 class PacmanElement {
     moveAvailable = false;
-    phase = "chase";
+    movementType = "chase";
+    outside;
     direction;
 
-    constructor(x, y, spritex, spritey) {
+    constructor(x, y, spritex, spritey, outside) {
         this.x = x;
         this.y = y;
-        this.spritex = spritex;
-        this.spritey = spritey;
-        // chase, scatter, frightened
+        this.spriteX = spritex;
+        this.startSpriteX = this.spriteX;
+        this.spriteY = spritey;
+        this.startSpriteY = this.spriteY;
+        this.outside = outside;
     }
 
 }
 
 class PacmanGame {
+    level = 1;
+    spriteTile = 24;
     map = {
         tile: 20,
         width: 28,
@@ -30,7 +35,7 @@ class PacmanGame {
             "############################",
             "#X....X.....X##X.....X....X#",
             "#.####.#####.##.#####.####.#",
-            "#.####.#####.##.#####.####.#",
+            "#P####.#####.##.#####.####P#",
             "#.####.#####.##.#####.####.#",
             "#X....X..X..X..X.....X....X#",
             "#.####.##.########.##.####.#",
@@ -39,8 +44,8 @@ class PacmanGame {
             "######.#####.##.#####.######",
             "    ##.#####.##.#####.##    ",
             "    ##.##X..X..X..X##.##    ",
-            "    ##.##.########.##.##    ",
-            "######.##.########.##.######",
+            "    ##.##.###DD###.##.##    ",
+            "######.##.##    ##.##.######",
             "X.....X..X########X..X.....X",
             "######.##.########.##.######",
             "    ##.##.########.##.##    ",
@@ -50,7 +55,7 @@ class PacmanGame {
             "#X....X..X..X##X..X..X....X#",
             "#.####.#####.##.#####.####.#",
             "#.####.#####.##.#####.####.#",
-            "#X.X##X..X..X..X..X..X##X.X#",
+            "#K.X##X..X..X..X..X..X##X.K#",
             "###.##.##.########.##.##.###",
             "###.##.##.########.##.##.###",
             "#X.X..X##X..X##X..X##X..X.X#",
@@ -62,17 +67,19 @@ class PacmanGame {
     };
     score = 0;
     elements = {
-        player: new PacmanElement(13, 17, 48, 72),
-        ghostPink: new PacmanElement(1, 1, 0, 192),
-        ghostRed: new PacmanElement(2, 1, 0, 144),
-        ghostOrange: new PacmanElement(3, 1, 0, 216),
-        ghostBlue: new PacmanElement(4, 1, 192, 192)
+        player: new PacmanElement(13, 17, 48, 72, true),
+        ghostPink: new PacmanElement(12, 13, 0, 192, false),
+        ghostRed: new PacmanElement(13, 11, 0, 144, true),
+        ghostOrange: new PacmanElement(13, 13, 0, 216, false),
+        ghostBlue: new PacmanElement(14, 13, 192, 192, false)
     };
     ghosts = Object.values(this.elements).slice(1);
     allPositions = this.map.board.flatMap((row, y) => row.split("").map((char, x) => ({x, y, char})));
     walls = this.allPositions.filter(item => item.char === "#");
     dots = this.allPositions.filter(item => item.char === "." || item.char === "X");
-    crossroads = this.allPositions.filter(item => item.char === "X");
+    crossroads = this.allPositions.filter(item => item.char === "X" || item.char === "K");
+    doors = this.allPositions.filter(item => item.char === "D");
+    powerups = this.allPositions.filter(item => item.char === "P" || item.char === "K");
 
     eatDot() {
         this.dots.forEach((dot, index) => {
@@ -84,23 +91,34 @@ class PacmanGame {
         });
     }
 
+    eatPowerup() {
+        this.powerups.forEach((powerup, index) => {
+            if (this.elements.player.x === powerup.x && this.elements.player.y === powerup.y) {
+                this.powerups.splice(index, 1);
+                this.ghosts
+                    .filter(ghost => ghost.outside)
+                    .forEach(ghost => this.ghostScaredState(ghost, 10000 - (this.level * 500)));
+            }
+        });
+    }
+
     playerMovement() {
         switch (this.elements.player.direction) {
             case "ArrowRight":
                 this.moving(this.elements.player, "ArrowRight");
-                this.elements.player.spritex = 145;
+                this.elements.player.spriteX = 145;
                 break;
             case "ArrowLeft":
                 this.moving(this.elements.player, "ArrowLeft");
-                this.elements.player.spritex = 49;
+                this.elements.player.spriteX = 49;
                 break;
             case "ArrowUp":
                 this.moving(this.elements.player, "ArrowUp");
-                this.elements.player.spritex = 73;
+                this.elements.player.spriteX = 73;
                 break;
             case "ArrowDown":
                 this.moving(this.elements.player, "ArrowDown");
-                this.elements.player.spritex = 169;
+                this.elements.player.spriteX = 169;
                 break;
         }
 
@@ -112,6 +130,7 @@ class PacmanGame {
             this.elements.player.x = 0;
         }
         this.eatDot();
+        this.eatPowerup();
     }
 
     // Wybór kierunku na zasadzie pseudolosowości wyboru, aby duszki nie były bezlitosnymi mordercami i czasami mogły się mylić :)
@@ -119,9 +138,30 @@ class PacmanGame {
         return directions[Math.floor(Math.random() * directions.length)];
     }
 
+    changeGhostSpriteBasedOnDirection(ghost) {
+
+        // Normalny wygląd duszków
+        if (ghost.movementType === "chase" || ghost.movementType === "scatter") {
+            switch (ghost.direction) {
+                case "ArrowLeft":
+                    ghost.spriteX = ghost.startSpriteX + 4 * this.spriteTile;
+                    break;
+                case "ArrowUp":
+                    ghost.spriteX = ghost.startSpriteX + 6 * this.spriteTile;
+                    break;
+                case "ArrowDown":
+                    ghost.spriteX = ghost.startSpriteX + 2 * this.spriteTile;
+                    break;
+                case "ArrowRight":
+                    ghost.spriteX = ghost.startSpriteX;
+                    break;
+
+            }
+        }
+    }
+
     ghostDirectionPick(player, ghost) {
         this.crossroads.forEach(crossroad => {
-
             // Komentarze określają lokalizację Pacmana w stosunku do ducha
             if (ghost.x === crossroad.x && ghost.y === crossroad.y) {
                 // Prawo Dół
@@ -143,32 +183,20 @@ class PacmanGame {
                 } else if (player.x < ghost.x && player.y < ghost.y) {
                     ghost.direction = this.randomiseFromGivenDirections(["ArrowLeft", "ArrowUp"]);
                 }
+            } else if (!ghost.moveAvailable) {
+                ghost.direction = this.randomiseFromGivenDirections(["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"]);
             }
+            this.changeGhostSpriteBasedOnDirection(ghost);
         });
-
-        if (!ghost.moveAvailable) {
-            switch (Math.floor(Math.random() * 4)) {
-                case 0:
-                    ghost.direction = "ArrowLeft";
-                    break;
-                case 1:
-                    ghost.direction = "ArrowRight";
-                    break;
-                case 2:
-                    ghost.direction = "ArrowUp";
-                    break;
-                case 3:
-                    ghost.direction = "ArrowDown";
-                    break;
-            }
-        }
     }
 
     ghostMovement() {
         this.ghosts.forEach(ghost => {
-            this.ghostDirectionPick(this.elements.player, ghost);
-            this.moving(ghost, ghost.direction);
-            this.playerReset(ghost);
+            if (ghost.outside) {
+                this.ghostDirectionPick(this.elements.player, ghost);
+                this.moving(ghost, ghost.direction);
+                this.playerReset(ghost);
+            }
         });
     }
 
@@ -177,6 +205,78 @@ class PacmanGame {
             this.elements.player.x = 13;
             this.elements.player.y = 17;
             this.elements.player.direction = null;
+        }
+    }
+
+    sortGhostsInHouse() {
+        let ghostsInHouse = Object.values(game.elements).filter(ghost => !ghost.outside);
+        for (let i = 0; i < ghostsInHouse.length; i++) {
+            ghostsInHouse[i].x = 12 + i;
+        }
+    }
+
+    activateGhost(ghost) {
+        ghost.x = 13;
+        ghost.y = 11;
+        ghost.outside = true;
+        this.sortGhostsInHouse();
+    }
+
+    resetGhostSprite(ghost) {
+        ghost.spriteX = ghost.startSpriteX;
+        ghost.spriteY = ghost.startSpriteY;
+    }
+
+    setScaredGhostSprite(ghost) {
+        ghost.spriteX = this.spriteTile * 9;
+        ghost.spriteY = this.spriteTile * 4;
+    }
+
+    setScaredFlashingGhostSprite(ghost) {
+        ghost.spriteX = this.spriteTile * 7;
+        ghost.spriteY = this.spriteTile * 4;
+    }
+
+    ghostScaredState(ghost, time) {
+        ghost.movementType = "frightened";
+        this.setScaredGhostSprite(ghost);
+        setTimeout(() => this.ghostFlashingSprite(ghost), time);
+    }
+
+
+    ghostFlashingSprite(ghost) {
+        const interval = setInterval(() => {
+            this.setScaredGhostSprite(ghost);
+            setTimeout(() => this.setScaredFlashingGhostSprite(ghost), 300);
+        }, 500);
+        setTimeout(() => {
+            this.resetGhostSprite(ghost);
+            ghost.movementType = "chase";
+            clearInterval(interval)
+        }, 4000);
+    }
+
+    deactivateGhost(ghost) {
+        if (ghost.outside) {
+            this.sortGhostsInHouse();
+            let ghostsInHouse = Object.values(game.elements).filter(ghost => !ghost.outside).length;
+            switch (ghostsInHouse) {
+                case 0:
+                    ghost.x = 12;
+                    break;
+                case 1:
+                    ghost.x = 13;
+                    break;
+                case 2:
+                    ghost.x = 14;
+                    break;
+                case 3:
+                    ghost.x = 15;
+                    break;
+            }
+            ghost.y = 13;
+            this.resetGhostSprite(ghost);
+            ghost.outside = false;
         }
     }
 
@@ -195,6 +295,12 @@ class PacmanGame {
         if (direction === "ArrowRight") elem.x++;
         this.walls.forEach(wall => {
             if (elem.x === wall.x && elem.y === wall.y) {
+                elem.x = currentPosition.x;
+                elem.y = currentPosition.y;
+            }
+        });
+        this.doors.forEach(door => {
+            if (elem.x === door.x && elem.y === door.y) {
                 elem.x = currentPosition.x;
                 elem.y = currentPosition.y;
             }
@@ -226,8 +332,8 @@ class Canvas {
             toDraw.forEach(draw =>
                 ctx.drawImage(
                     sprites,
-                    draw.spritex,
-                    draw.spritey,
+                    draw.spriteX,
+                    draw.spriteY,
                     24,
                     24,
                     draw.x * game.map.tile,
@@ -236,33 +342,54 @@ class Canvas {
                     game.map.tile
                 )
             );
+
+            // Rysowanie kulek
+
             game.dots.forEach(dot => {
-                ctx.strokeStyle = "yellow";
-                ctx.fillStyle = "yellow";
+                ctx.strokeStyle = "#ffb8ae";
+                ctx.fillStyle = "#ffb8ae";
                 ctx.fill();
                 ctx.beginPath();
                 ctx.arc(
                     dot.x * game.map.tile + game.map.tile / 2,
                     dot.y * game.map.tile + game.map.tile / 2,
-                    game.map.tile / 5,
+                    game.map.tile / 7,
                     0,
                     2 * Math.PI
                 );
                 ctx.stroke();
             });
+
+            // Rysowanie powerupów
+
+            game.powerups.forEach(powerup => {
+                ctx.strokeStyle = "#ffb8ae";
+                ctx.fillStyle = "#ffb8ae";
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(
+                    powerup.x * game.map.tile + game.map.tile / 2,
+                    powerup.y * game.map.tile + game.map.tile / 2,
+                    game.map.tile / 3,
+                    0,
+                    2 * Math.PI
+                );
+                ctx.stroke();
+            });
+
+            // Rysowanie ścian
+
             game.walls.forEach(wall => {
                 ctx.fillStyle = "darkblue";
                 ctx.fillRect(wall.x * game.map.tile, wall.y * game.map.tile, game.map.tile, game.map.tile);
             });
 
-            // // Do usunięcia - służy zaznaczeniu skrzyżowań
-            //
-            // game.crossroads.forEach(crossroad => {
-            //     ctx.fillStyle = "red";
-            //     ctx.fillRect(crossroad.x * game.map.tile, crossroad.y * game.map.tile, game.map.tile, game.map.tile);
-            // });
-            //
-            // // Koniec zaznaczania skrzyżowań
+            // Rysowanie drzwi
+
+            game.doors.forEach(door => {
+                ctx.fillStyle = "brown";
+                ctx.fillRect(door.x * game.map.tile, door.y * game.map.tile, game.map.tile, game.map.tile);
+            });
 
             window.requestAnimationFrame(step);
 
