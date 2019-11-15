@@ -44,10 +44,10 @@ class PacmanGame {
       "|.┏==┓.┏===┓.||.┏===┓.┏==┓.|",
       "|P|  |.|   |.||.|   |.|  |P|",
       "|.┗==┛.┗===┛.┗┛.┗===┛.┗==┛.|",
-      "|X....X..X..X..X.....X....X|",
+      "|X....X..X..X..X..X..X....X|",
       "|.┏==┓.┏┓.┏======┓.┏┓.┏==┓.|",
       "|.┗==┛.||.┗==┓┏==┛.||.┗==┛.|",
-      "|X....X||X..X||X...||X....X|",
+      "|X....X||X..X||X..X||X....X|",
       "┗====┓.|┗==┓.||.┏==┛|.┏====┛",
       "     |.|┏==┛.┗┛.┗==┓|.|     ",
       "     |.||X..X..X..X||.|     ",
@@ -56,7 +56,7 @@ class PacmanGame {
       "......X..X|######|X..X......",
       "=====┓.┏┓.|######|.┏┓.┏=====",
       "     |.||.┗======┛.||.|     ",
-      "     |.||.########.||.|     ",
+      "     |.||X########X||.|     ",
       "     |.||.┏======┓.||.|     ",
       "┏====┛.┗┛.┗==┓┏==┛.┗┛.┗====┓",
       "|X....X..X..X||X..X..X....X|",
@@ -854,14 +854,45 @@ game.pacmanInit();
 
 gameCanvas.canvasInit();
 
-window.addEventListener("keyup", event => {
+const changeDirectionAtCrossroads = event => {
   if (
     (event.code === "ArrowRight" ||
       event.code === "ArrowLeft" ||
       event.code === "ArrowUp" ||
       event.code === "ArrowDown") &&
     game.player.alive
+  )
+    if (
+      game.elements.player.direction === "ArrowDown" ||
+      game.elements.player.direction === "ArrowUp"
+    ) {
+      if (event.code === "ArrowDown" || event.code === "ArrowUp") {
+        game.elements.player.direction = event.code;
+      }
+    }
+  if (
+    game.elements.player.direction === "ArrowLeft" ||
+    game.elements.player.direction === "ArrowRight"
   ) {
+    if (event.code === "ArrowLeft" || event.code === "ArrowRight") {
+      game.elements.player.direction = event.code;
+    }
+  }
+
+  if (game.elements.player.x === 13 && game.elements.player.y === 17) {
     game.elements.player.direction = event.code;
   }
-});
+  {
+    game.crossroads.forEach(crossroad => {
+      if (
+        game.elements.player.x === crossroad.x &&
+        game.elements.player.y === crossroad.y
+      ) {
+        game.elements.player.direction = event.code;
+      }
+    });
+  }
+};
+
+window.addEventListener("keydown", event => changeDirectionAtCrossroads(event));
+window.addEventListener("keyup", event => changeDirectionAtCrossroads(event));
