@@ -895,4 +895,7 @@ const changeDirectionAtCrossroads = event => {
 };
 
 window.addEventListener("keydown", event => changeDirectionAtCrossroads(event));
+window.addEventListener("keypress", event =>
+  changeDirectionAtCrossroads(event)
+);
 window.addEventListener("keyup", event => changeDirectionAtCrossroads(event));
