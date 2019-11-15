@@ -34,6 +34,7 @@ class PacmanElement {
 class PacmanGame {
     level = 1;
     life = 2;
+    movementSpeed = 10;
     spriteTile = 24;
     ghostResetTile = {x: 13, y: 11};
     map = {
@@ -53,7 +54,7 @@ class PacmanGame {
             "┗====┓.|┗==┓.||.┏==┛|.┏====┛",
             "     |.|┏==┛.┗┛.┗==┓|.|     ",
             "     |.||X..X..X..X||.|     ",
-            "     |.||.┏==DD==┓.||.|     ",
+            "     |.||.┏======┓.||.|     ",
             "=====┛.┗┛.|######|.┗┛.┗=====",
             "......X..X|######|X..X......",
             "=====┓.┏┓.|######|.┏┓.┏=====",
@@ -76,7 +77,6 @@ class PacmanGame {
     };
     score = 0;
     gameIntervals = {};
-    gameTimeouts = [];
     elements = {
         player: new PacmanElement("player", 13, 17, 48, 72, true, true),
         ghostPink: new PacmanElement("ghostPink", 12, 13, 0, 192, false, false),
@@ -100,7 +100,6 @@ class PacmanGame {
             item.char !== "P" &&
             item.char !== "." &&
             item.char !== "#" &&
-            item.char !== "D" &&
             item.char !== "K"
     );
     dots = this.allPositions.filter(
@@ -119,7 +118,7 @@ class PacmanGame {
     modifyMovementSpeed(ghost, modifier) {
         let ghostIntervalToChange = this.gameIntervals.ghostMovement.find(interval => interval.ghost.id === ghost.id);
         clearInterval(ghostIntervalToChange.interval);
-        const intervalToSet = setInterval(() => this.ghostMovement(ghost), 100 * modifier);
+        const intervalToSet = setInterval(() => this.ghostMovement(ghost), this.movementSpeed * modifier);
         ghostIntervalToChange.interval = intervalToSet;
         ghost.movementInterval = intervalToSet;
     }
@@ -149,7 +148,7 @@ class PacmanGame {
                     .forEach(ghost => {
                         clearTimeout(ghost.scared);
                         ghost.scared = null;
-                        this.ghostScaredState(ghost, 10000 - this.level * 500);
+                        this.ghostScaredState(ghost, 6000 - this.level * 500);
                     });
             }
         });
@@ -363,7 +362,7 @@ class PacmanGame {
                 ghost.y === this.ghostResetTile.y
             ) {
                 this.deactivateGhost(ghost);
-                this.activateGhost(ghost);
+                setTimeout(() => this.activateGhost(ghost), 1000);
             }
             this.moving(ghost, ghost.direction);
         }
@@ -403,19 +402,21 @@ class PacmanGame {
         }
     }
 
-    ghostActivationRoutine() {
+    ghostActivationRoutine(clear) {
         // The pink ghost starts inside the ghost house, but always exits immediately, even in the first level.
+
         let pinkActivationTimeout = setTimeout(() => {
             if (!this.elements.ghostPink.activated) this.activateGhost(this.elements.ghostPink)
         }, 1000);
-
+        if (clear !== undefined) {
+            clearTimeout(pinkActivationTimeout);
+        }
         // The blue ghost is nicknamed Inky, and remains inside the ghost house for a short time on the first level,
         // not joining the chase until Pac-Man has managed to consume at least 30 of the dots.
         if (this.dots.length <= this.dotsBlueActivationNumber && !this.elements.ghostBlue.activated) this.activateGhost(this.elements.ghostBlue);
         //The orange ghost, "Clyde", is the last to leave the ghost house,
         // and does not exit at all in the first level until over a third of the dots have been eaten.
         if (this.dots.length <= this.dotsOrangeActivationNumber && !this.elements.ghostOrange.activated) this.activateGhost(this.elements.ghostOrange);
-        return pinkActivationTimeout;
     }
 
     sortGhostsInHouse() {
@@ -437,6 +438,10 @@ class PacmanGame {
         ghost.activated = true;
         clearTimeout(ghost.scared);
         this.sortGhostsInHouse();
+    }
+
+    preciseRound(num, dec) {
+        return +num.toFixed(dec);
     }
 
     // Powrót ducha do bazowych sprite'ów
@@ -528,67 +533,115 @@ class PacmanGame {
 
     }
 
-    moving(elem, direction) {
-        const currentPosition = {
-            x: elem.x,
-            y: elem.y
-        };
-        if (direction === "ArrowUp") elem.y--;
-        if (direction === "ArrowDown") elem.y++;
-        if (direction === "ArrowLeft") elem.x--;
-        if (direction === "ArrowRight") elem.x++;
-        this.walls.forEach(wall => {
-            if (elem.x === wall.x && elem.y === wall.y) {
-                elem.x = currentPosition.x;
-                elem.y = currentPosition.y;
+    objectCollisionCheck(elem, direction, elemPassed) {
+        let elemToCollide = elemPassed;
+
+        if (elemToCollide === undefined) {
+            let currentTarget;
+            switch (direction) {
+                case "ArrowUp":
+                    currentTarget = this.walls.find(wall => wall.x === elem.x && wall.y === elem.y - 1);
+                    break;
+                case "ArrowDown":
+                    currentTarget = this.walls.find(wall => wall.x === elem.x && wall.y === elem.y + 1);
+                    break;
+                case "ArrowLeft":
+                    currentTarget = this.walls.find(wall => wall.x === elem.x - 1 && wall.y === elem.y);
+                    break;
+                case "ArrowRight":
+                    currentTarget = this.walls.find(wall => wall.x === elem.x + 1 && wall.y === elem.y);
+                    break;
             }
-        });
-        this.doors.forEach(door => {
-            if (elem.x === door.x && elem.y === door.y) {
-                elem.x = currentPosition.x;
-                elem.y = currentPosition.y;
-            }
-        });
-        if (elem.x !== currentPosition.x || elem.y !== currentPosition.y) {
-            elem.moveAvailable = true;
-            elem.lastGoodPath = elem.direction;
-        } else {
+            elemToCollide = currentTarget;
+        }
+        switch (direction) {
+            case "ArrowUp":
+                return elem.x === elemToCollide.x && elem.y - 1 === elemToCollide.y;
+            case "ArrowDown":
+                return elem.x === elemToCollide.x && elem.y + 1 === elemToCollide.y;
+            case "ArrowLeft":
+                return elem.x - 1 === elemToCollide.x && elem.y === elemToCollide.y;
+            case "ArrowRight":
+                return elem.x + 1 === elemToCollide.x && elem.y === elemToCollide.y;
+        }
+
+
+    }
+
+    objectCollisionDecisionMake(elem, currentPosition, wall, direction) {
+        if (this.objectCollisionCheck(currentPosition, direction, wall)) {
             elem.moveAvailable = false;
+            elem.x = Math.round(currentPosition.x);
+            elem.y = Math.round(currentPosition.y);
             if (elem === this.player) {
                 elem.direction = elem.lastGoodPath;
             } else {
-                elem.direction = !elem.alive
-                    ? this.ghostDirectionAlgorithm(this.ghostResetTile, elem)
-                    : this.ghostDirectionAlgorithm(this.player, elem);
+                this.ghostMovementTypesPick(elem)
             }
+        } else {
+            elem.moveAvailable = true;
+            elem.lastGoodPath = elem.direction;
         }
     }
 
+    moving(elem, direction) {
+
+        const currentPosition = {
+            x: this.preciseRound(elem.x, 1),
+            y: this.preciseRound(elem.y, 1)
+        };
+
+        switch (direction) {
+            case "ArrowUp":
+                if (currentPosition.x % 1 === 0) elem.y = elem.y - 0.1;
+                break;
+            case "ArrowDown":
+                if (currentPosition.x % 1 === 0) elem.y = elem.y + 0.1;
+                break;
+            case "ArrowLeft":
+                if (currentPosition.y % 1 === 0) elem.x = elem.x - 0.1;
+                break;
+            case "ArrowRight":
+                if (currentPosition.y % 1 === 0) elem.x = elem.x + 0.1;
+                break;
+        }
+
+        const newPosition = {
+            x: this.preciseRound(elem.x, 1),
+            y: this.preciseRound(elem.y, 1)
+        };
+
+        this.walls.forEach(wall => {
+            this.objectCollisionDecisionMake(elem, currentPosition, wall, direction);
+        });
+        if (this.objectCollisionCheck(elem, direction)) this.ghostMovementTypesPick(elem);
+
+        // this.doors.forEach(door => {
+        //     if (this.objectCollisionCheck(newPosition, door, direction)) {
+        //         elem.x = Math.round(currentPosition.x);
+        //         elem.y = Math.round(currentPosition.y);
+        //     }
+        // });
+
+    }
+
     pacmanInit() {
+        this.gameIntervals = {};
         const ghostIntervals = [];
-        let pinkActivationTimeout = this.ghostActivationRoutine();
         this.ghosts.forEach(ghost => {
-            ghost.movementInterval = setInterval(() => this.ghostMovement(ghost), 100 * game.ghostMovementModifier.chase);
+            ghost.movementInterval = setInterval(() => this.ghostMovement(ghost), this.movementSpeed * game.ghostMovementModifier.chase);
             ghostIntervals.push({
                 ghost: ghost,
                 interval: ghost.movementInterval
             });
         });
         this.gameIntervals = {
-            ghostActivationRoutine: setInterval(() => pinkActivationTimeout, 1000),
-            playerMovement:
-                setInterval(() => {
-                    this.playerMovement();
-                }, 100),
+            ghostActivationRoutine: setInterval(() => this.ghostActivationRoutine(), 1000),
+            playerMovement: setInterval(() => this.playerMovement(), this.movementSpeed),
             // Częstsze sprawdzanie kolizji - nie ma mowy, że duchy się miną z pacmanem
-            ghostCollision:
-                setInterval(() => {
-                    this.ghosts.forEach(ghost => this.ghostCollisionCheck(ghost));
-                }, 10),
-            ghostMovement:
-                [...ghostIntervals]
-        }
-        this.gameTimeouts.push(pinkActivationTimeout);
+            ghostCollision: setInterval(() => this.ghosts.forEach(ghost => this.ghostCollisionCheck(ghost)), this.movementSpeed),
+            ghostMovement: [...ghostIntervals]
+        };
     }
 
     pacmanDestroyAnimation() {
@@ -609,6 +662,7 @@ class PacmanGame {
     }
 
     gameReset(resetType) {
+
         this.player.alive = true;
         this.ghosts.forEach(ghost => this.deactivateGhost(ghost));
         Object.values(this.gameIntervals)
@@ -626,10 +680,12 @@ class PacmanGame {
                 item => item.char === "." || item.char === "X"
             );
         }
-        this.gameTimeouts = [];
+        this.ghosts.forEach(ghost => ghost.activated = false);
         this.playerPositionReset();
         this.activateGhost(this.elements.ghostRed);
         this.pacmanInit();
+
+
     }
 }
 
@@ -800,6 +856,7 @@ const gameCanvas = new Canvas();
 game.pacmanInit();
 
 gameCanvas.canvasInit();
+
 
 window.addEventListener("keyup", event => {
     if (
