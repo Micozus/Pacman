@@ -150,6 +150,16 @@ class PacmanGame {
     this.powerups.forEach((powerup, index) => {
       if (this.player.x === powerup.x && this.player.y === powerup.y) {
         this.powerups.splice(index, 1);
+        this.score = this.score * 1 + 1000 + "";
+        switch (this.score.length) {
+          case 3:
+            this.score = "00" + this.score;
+            break;
+          case 4:
+            this.score = "0" + this.score;
+            break;
+        }
+        this.scorePoints = this.score.split("");
         this.ghosts
           .filter(ghost => ghost.outside)
           .forEach(ghost => {
