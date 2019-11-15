@@ -227,9 +227,13 @@ class PacmanGame {
         this.crossroads.forEach(crossroad => {
             // Komentarze określają lokalizację Pacmana w stosunku do ducha
             if (ghost.x === crossroad.x && ghost.y === crossroad.y) {
+                console.log("skrzyzowanie");
+                console.log("cr. x " + crossroad.x);
+                console.log("cr. y " + crossroad.y);
                 // Sprawdzenie czy duch nie zostal zlapany przez Pacmana
                 if (ghost.alive) {
                     // Prawo Dół
+
                     if (elementToChase.x > ghost.x && elementToChase.y > ghost.y) {
                         // Ruch warunkowany typem poruszania ducha, drugi state to frightened,
                         // TODO: ew. scatter type
@@ -237,7 +241,9 @@ class PacmanGame {
                             ghost.movementType === "chase"
                                 ? this.randomiseFromGivenDirections(["ArrowRight", "ArrowDown"])
                                 : this.randomiseFromGivenDirections(["ArrowLeft", "ArrowUp"]);
+
                         // Prawo
+
                     } else if (
                         elementToChase.x > ghost.x &&
                         elementToChase.y === ghost.y
@@ -245,24 +251,26 @@ class PacmanGame {
                         ghost.direction =
                             ghost.movementType === "chase"
                                 ? this.randomiseFromGivenDirections(["ArrowRight"])
-                                : this.randomiseFromGivenDirections([
-                                    "ArrowLeft",
-                                    "ArrowDown",
-                                    "ArrowUp"
-                                ]);
+                                : this.randomiseFromGivenDirections(["ArrowLeft", "ArrowDown", "ArrowUp"]);
+
                         // Prawo Góra
+
                     } else if (elementToChase.x > ghost.x && elementToChase.y < ghost.y) {
                         ghost.direction =
                             ghost.movementType === "chase"
                                 ? this.randomiseFromGivenDirections(["ArrowRight", "ArrowUp"])
                                 : this.randomiseFromGivenDirections(["ArrowLeft", "ArrowDown"]);
+
                         // Lewo Dół
+
                     } else if (elementToChase.x < ghost.x && elementToChase.y > ghost.y) {
                         ghost.direction =
                             ghost.movementType === "chase"
                                 ? this.randomiseFromGivenDirections(["ArrowLeft", "ArrowDown"])
                                 : this.randomiseFromGivenDirections(["ArrowRight", "ArrowUp"]);
+
                         // Lewo
+
                     } else if (
                         elementToChase.x < ghost.x &&
                         elementToChase.y === ghost.y
@@ -270,68 +278,60 @@ class PacmanGame {
                         ghost.direction =
                             ghost.movementType === "chase"
                                 ? this.randomiseFromGivenDirections(["ArrowLeft"])
-                                : this.randomiseFromGivenDirections([
-                                    "ArrowRight",
-                                    "ArrowDown",
-                                    "ArrowUp"
-                                ]);
+                                : this.randomiseFromGivenDirections(["ArrowRight", "ArrowDown", "ArrowUp"]);
+
                         // Lewo Góra
+
                     } else if (elementToChase.x < ghost.x && elementToChase.y < ghost.y) {
                         ghost.direction =
                             ghost.movementType === "chase"
                                 ? this.randomiseFromGivenDirections(["ArrowLeft", "ArrowUp"])
-                                : this.randomiseFromGivenDirections([
-                                    "ArrowRight",
-                                    "ArrowDown"
-                                ]);
+                                : this.randomiseFromGivenDirections(["ArrowRight", "ArrowDown"]);
                     }
+
                     // Jezeli zostal zlapany przez Pacmana kieruje sie do bramy jako duch
+
                 } else {
+
                     // Prawo Dół
+
                     if (elementToChase.x > ghost.x && elementToChase.y > ghost.y) {
-                        ghost.direction = this.randomiseFromGivenDirections([
-                            "ArrowRight",
-                            "ArrowDown"
-                        ]);
+                        ghost.direction = this.randomiseFromGivenDirections(["ArrowRight", "ArrowDown"]);
+
                         // Prawo
+
                     } else if (
                         elementToChase.x > ghost.x &&
                         elementToChase.y === ghost.y
                     ) {
                         ghost.direction = this.randomiseFromGivenDirections(["ArrowRight"]);
+
                         // Prawo Góra
+
                     } else if (elementToChase.x > ghost.x && elementToChase.y < ghost.y) {
-                        ghost.direction = this.randomiseFromGivenDirections([
-                            "ArrowRight",
-                            "ArrowUp"
-                        ]);
+                        ghost.direction = this.randomiseFromGivenDirections(["ArrowRight", "ArrowUp"]);
+
                         // Lewo Dół
+
                     } else if (elementToChase.x < ghost.x && elementToChase.y > ghost.y) {
-                        ghost.direction = this.randomiseFromGivenDirections([
-                            "ArrowLeft",
-                            "ArrowDown"
-                        ]);
+                        ghost.direction = this.randomiseFromGivenDirections(["ArrowLeft", "ArrowDown"]);
+
                         // Lewo
+
                     } else if (
                         elementToChase.x < ghost.x &&
                         elementToChase.y === ghost.y
                     ) {
                         ghost.direction = this.randomiseFromGivenDirections(["ArrowLeft"]);
+
                         // Lewo Góra
+
                     } else if (elementToChase.x < ghost.x && elementToChase.y < ghost.y) {
-                        ghost.direction = this.randomiseFromGivenDirections([
-                            "ArrowLeft",
-                            "ArrowUp"
-                        ]);
+                        ghost.direction = this.randomiseFromGivenDirections(["ArrowLeft", "ArrowUp"]);
                     }
                 }
             } else if (!ghost.moveAvailable) {
-                ghost.direction = this.randomiseFromGivenDirections([
-                    "ArrowRight",
-                    "ArrowDown",
-                    "ArrowLeft",
-                    "ArrowUp"
-                ]);
+                ghost.direction = this.randomiseFromGivenDirections(["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"]);
             }
 
             this.changeGhostSpriteBasedOnDirection(ghost);
@@ -533,27 +533,7 @@ class PacmanGame {
 
     }
 
-    objectCollisionCheck(elem, direction, elemPassed) {
-        let elemToCollide = elemPassed;
-
-        if (elemToCollide === undefined) {
-            let currentTarget;
-            switch (direction) {
-                case "ArrowUp":
-                    currentTarget = this.walls.find(wall => wall.x === elem.x && wall.y === elem.y - 1);
-                    break;
-                case "ArrowDown":
-                    currentTarget = this.walls.find(wall => wall.x === elem.x && wall.y === elem.y + 1);
-                    break;
-                case "ArrowLeft":
-                    currentTarget = this.walls.find(wall => wall.x === elem.x - 1 && wall.y === elem.y);
-                    break;
-                case "ArrowRight":
-                    currentTarget = this.walls.find(wall => wall.x === elem.x + 1 && wall.y === elem.y);
-                    break;
-            }
-            elemToCollide = currentTarget;
-        }
+    objectCollisionCheck(elem, direction, elemToCollide) {
         switch (direction) {
             case "ArrowUp":
                 return elem.x === elemToCollide.x && elem.y - 1 === elemToCollide.y;
@@ -568,24 +548,26 @@ class PacmanGame {
 
     }
 
-    objectCollisionDecisionMake(elem, currentPosition, wall, direction) {
-        if (this.objectCollisionCheck(currentPosition, direction, wall)) {
-            elem.moveAvailable = false;
-            elem.x = Math.round(currentPosition.x);
-            elem.y = Math.round(currentPosition.y);
-            if (elem === this.player) {
-                elem.direction = elem.lastGoodPath;
+    objectCollisionDecisionMake(elem, currentPosition, direction) {
+        this.walls.forEach(wall => {
+            if (this.objectCollisionCheck(currentPosition, direction, wall)) {
+                elem.moveAvailable = false;
+                elem.x = Math.round(currentPosition.x);
+                elem.y = Math.round(currentPosition.y);
+                if (elem === this.player) {
+                    elem.direction = elem.lastGoodPath;
+                } else {
+                    this.ghostMovementTypesPick(elem)
+                }
             } else {
-                this.ghostMovementTypesPick(elem)
+                elem.moveAvailable = true;
+                elem.lastGoodPath = elem.direction;
             }
-        } else {
-            elem.moveAvailable = true;
-            elem.lastGoodPath = elem.direction;
-        }
+        });
+
     }
 
     moving(elem, direction) {
-
         const currentPosition = {
             x: this.preciseRound(elem.x, 1),
             y: this.preciseRound(elem.y, 1)
@@ -610,11 +592,9 @@ class PacmanGame {
             x: this.preciseRound(elem.x, 1),
             y: this.preciseRound(elem.y, 1)
         };
+        this.objectCollisionDecisionMake(elem, currentPosition, direction);
 
-        this.walls.forEach(wall => {
-            this.objectCollisionDecisionMake(elem, currentPosition, wall, direction);
-        });
-        if (this.objectCollisionCheck(elem, direction)) this.ghostMovementTypesPick(elem);
+        // if (this.objectCollisionCheck(elem, direction)) this.ghostMovementTypesPick(elem);
 
         // this.doors.forEach(door => {
         //     if (this.objectCollisionCheck(newPosition, door, direction)) {
