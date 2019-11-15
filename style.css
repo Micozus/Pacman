@@ -8,9 +8,3 @@ body {
   background-color: black;
   border: 2px solid white;
 }
-
-#score {
-  width: 280px;
-  margin: 10px auto;
-  text-align: right;
-}
