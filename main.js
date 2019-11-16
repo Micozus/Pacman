@@ -14,6 +14,7 @@ class PacmanElement {
     direction;
     alive = true;
     scared = null;
+    crossFlag = false;
     movementInterval;
     activated;
 
@@ -34,7 +35,7 @@ class PacmanElement {
 class PacmanGame {
     level = 1;
     life = 2;
-    movementSpeed = 10;
+    movementSpeed = 20;
     spriteTile = 24;
     ghostResetTile = {x: 13, y: 11};
     map = {
@@ -59,7 +60,7 @@ class PacmanGame {
             "......X..X|######|X..X......",
             "=====┓.┏┓.|######|.┏┓.┏=====",
             "     |.||.┗======┛.||.|     ",
-            "     |.||.########.||.|     ",
+            "     |.||X########X    ||.|     ",
             "     |.||.┏======┓.||.|     ",
             "┏====┛.┗┛.┗==┓┏==┛.┗┛.┗====┓",
             "|X....X..X..X||X..X..X....X|",
@@ -222,14 +223,28 @@ class PacmanGame {
         }
     }
 
+    elementCrossroadCollisionCheck(elem) {
+        let crossroadFlag;
+        this.crossroads.forEach(crossroad => {
+            crossroadFlag = this.elementMotionCollisionCheck(elem, crossroad)
+        });
+        return crossroadFlag;
+    }
+
+    elementMotionCollisionCheck(elem1, elem2) {
+        if (!elem1.crossFlag) {
+            return ((elem1.x >= elem2.x + 0.3 && elem1.x <= elem2.x + 0.7) && (elem1.y >= elem2.y + 0.3 && elem1.y <= elem2.y + 0.7));
+        } else {
+            return true;
+        }
+    }
+
     // Algorytm poruszania ducha
     ghostDirectionAlgorithm(elementToChase, ghost) {
         this.crossroads.forEach(crossroad => {
             // Komentarze określają lokalizację Pacmana w stosunku do ducha
             if (ghost.x === crossroad.x && ghost.y === crossroad.y) {
-                console.log("skrzyzowanie");
-                console.log("cr. x " + crossroad.x);
-                console.log("cr. y " + crossroad.y);
+
                 // Sprawdzenie czy duch nie zostal zlapany przez Pacmana
                 if (ghost.alive) {
                     // Prawo Dół
