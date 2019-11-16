@@ -14,7 +14,7 @@ class PacmanElement {
     direction;
     alive = true;
     scared = null;
-    crossFlag = false;
+    crossroadEntered;
     movementInterval;
     activated;
 
@@ -60,7 +60,7 @@ class PacmanGame {
             "......X..X|######|X..X......",
             "=====┓.┏┓.|######|.┏┓.┏=====",
             "     |.||.┗======┛.||.|     ",
-            "     |.||X########X    ||.|     ",
+            "     |.||.########.||.|     ",
             "     |.||.┏======┓.||.|     ",
             "┏====┛.┗┛.┗==┓┏==┛.┗┛.┗====┓",
             "|X....X..X..X||X..X..X....X|",
@@ -156,7 +156,14 @@ class PacmanGame {
     }
 
     playerMovement() {
+
         if (this.player.direction) {
+            // this.crossroads.forEach(crossroad => {
+            //     if (this.elementMotionCollisionCheck(this.player, crossroad)) {
+            //         this.player.x = crossroad.x;
+            //         this.player.y = crossroad.y;
+            //     }
+            // });
             this.player.spriteY = 3 * this.spriteTile;
             switch (this.player.direction) {
                 case "ArrowRight":
@@ -223,27 +230,20 @@ class PacmanGame {
         }
     }
 
-    elementCrossroadCollisionCheck(elem) {
-        let crossroadFlag;
-        this.crossroads.forEach(crossroad => {
-            crossroadFlag = this.elementMotionCollisionCheck(elem, crossroad)
-        });
-        return crossroadFlag;
-    }
 
     elementMotionCollisionCheck(elem1, elem2) {
-        if (!elem1.crossFlag) {
-            return ((elem1.x >= elem2.x + 0.3 && elem1.x <= elem2.x + 0.7) && (elem1.y >= elem2.y + 0.3 && elem1.y <= elem2.y + 0.7));
-        } else {
-            return true;
-        }
+        return elem1.x >= elem2.x - 0.1 && elem1.x <= elem2.x + 0.1 && elem1.y === elem2.y ||
+            elem1.y >= elem2.y - 0.1 && elem1.y <= elem2.y + 0.1 && elem1.x === elem2.x;
     }
 
     // Algorytm poruszania ducha
     ghostDirectionAlgorithm(elementToChase, ghost) {
+        // console.log(ghost.crossroadEntered);
+
         this.crossroads.forEach(crossroad => {
+            // console.log(this.elementMotionCollisionCheck(ghost, crossroad));
             // Komentarze określają lokalizację Pacmana w stosunku do ducha
-            if (ghost.x === crossroad.x && ghost.y === crossroad.y) {
+            if (this.elementMotionCollisionCheck(ghost, crossroad)) {
 
                 // Sprawdzenie czy duch nie zostal zlapany przez Pacmana
                 if (ghost.alive) {
@@ -345,11 +345,14 @@ class PacmanGame {
                         ghost.direction = this.randomiseFromGivenDirections(["ArrowLeft", "ArrowUp"]);
                     }
                 }
-            } else if (!ghost.moveAvailable) {
-                ghost.direction = this.randomiseFromGivenDirections(["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"]);
+                // } else if (!this.elementMotionCollisionCheck(ghost, crossroad) && ghost.crossroadEntered) {
+                //     ghost.crossroadEntered = false;
+                // } else if (ghost.crossroadEntered === undefined) {
+                //     ghost.direction = this.randomiseFromGivenDirections(["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"]);
             }
 
             this.changeGhostSpriteBasedOnDirection(ghost);
+
         });
     }
 
@@ -603,10 +606,6 @@ class PacmanGame {
                 break;
         }
 
-        const newPosition = {
-            x: this.preciseRound(elem.x, 1),
-            y: this.preciseRound(elem.y, 1)
-        };
         this.objectCollisionDecisionMake(elem, currentPosition, direction);
 
         // if (this.objectCollisionCheck(elem, direction)) this.ghostMovementTypesPick(elem);
@@ -631,7 +630,7 @@ class PacmanGame {
             });
         });
         this.gameIntervals = {
-            ghostActivationRoutine: setInterval(() => this.ghostActivationRoutine(), 1000),
+            // ghostActivationRoutine: setInterval(() => this.ghostActivationRoutine(), 1000),
             playerMovement: setInterval(() => this.playerMovement(), this.movementSpeed),
             // Częstsze sprawdzanie kolizji - nie ma mowy, że duchy się miną z pacmanem
             ghostCollision: setInterval(() => this.ghosts.forEach(ghost => this.ghostCollisionCheck(ghost)), this.movementSpeed),
