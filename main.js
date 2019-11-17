@@ -620,7 +620,7 @@ class PacmanGame {
             });
         });
         this.gameIntervals = {
-            // ghostActivationRoutine: setInterval(() => this.ghostActivationRoutine(), 1000),
+            ghostActivationRoutine: setInterval(() => this.ghostActivationRoutine(), 1000),
             playerMovement: setInterval(() => {
                 this.playerMovement();
             }, 100),
@@ -688,7 +688,7 @@ class PacmanGame {
         }
         this.ghosts.forEach(ghost => ghost.activated = false);
         this.playerPositionReset();
-        // this.activateGhost(this.elements.ghostRed);
+        this.activateGhost(this.elements.ghostRed);
         this.pacmanInit();
     }
 }
