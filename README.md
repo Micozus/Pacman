@@ -10,12 +10,12 @@ I was mainly responsible for moving / collision and ai logic during developement
 
 Focus of this task was to practice group coding / branch merging and collaboration while also putting some focus on code you make.
 
-Tech used:
+**Tech used:**
 1) JavaScript (ES6),
 2) Babel,
 3) Canvas to animate that thing :) 
 
-TODO, after deployment for us would be to:
+**TODO, after deployment for us would be to:**
 1) Adding more frames to the animations and work on collisions then,
 2) Implementing "scatter" state of pacman ghost movement,
 3) Make this spaghetti code modular :) 
