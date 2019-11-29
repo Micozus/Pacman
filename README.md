@@ -1,4 +1,4 @@
-![Game snapshot](https://github.com/Micozus/Pacman-MiniGame/blob/master/pacman-snapshot.JPG)
+![Game snapshot](https://github.com/Micozus/Pacman-MiniGame/blob/master/pacman-snapshot2.JPG)
 
 ## Pacman minigame
 ######  Weekly task in [https://coderscamp.edu.pl/](https://coderscamp.edu.pl/) course
